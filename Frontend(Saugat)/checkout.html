@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checkout - CARCODEMANDU</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">CARCODEMANDU</a>
+            <nav class="nav-links">
+                <ul>
+                    <li><a href="fleet.html">Rent</a></li>
+                    <li><a href="index.html#how">How it Works</a></li>
+                    <li><a href="login.html">Sign In</a></li>
+                    <li><a href="#">Manage Booking</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container" style="padding-top:120px;">
+        <h6 style="color:var(--text-muted); font-size:0.8rem; letter-spacing:2px;">COMPLETE BOOKING</h6>
+        <h2 class="mb-4">SECURE YOUR PRECISION<br>MOBILITY SOLUTION</h2>
+        
+        <div class="grid-3" style="gap:50px;">
+            <div style="grid-column: span 2;">
+                
+                <!-- 01 Driver Details -->
+                <div class="mb-4">
+                    <h3 style="font-size:1.2rem; border-bottom:1px solid var(--glass-border); padding-bottom:10px; margin-bottom:20px;">01. Driver Details</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" value="John">
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" value="Doe">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Email Address</label>
+                            <input type="email" value="john.doe@carcodemandu.com">
+                        </div>
+                        <div class="form-group">
+                            <label>License Number</label>
+                            <input type="text" value="ABC-12345-XYZ">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 02 Coverage Selection -->
+                <div class="mb-4">
+                    <h3 style="font-size:1.2rem; border-bottom:1px solid var(--glass-border); padding-bottom:10px; margin-bottom:20px;">02. Coverage Selection</h3>
+                    
+                    <label class="card mb-2" style="display:block; cursor:pointer; background:rgba(255,255,255,0.05); border-color:var(--text-white);">
+                        <div class="card-body" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <h4 style="margin-bottom:5px; display:flex; align-items:center; gap:10px;">
+                                    <input type="radio" name="coverage" checked> Premium Protection
+                                </h4>
+                                <p class="text-muted" style="font-size:0.85rem; padding-left:25px;">Full collision damage waiver and zero excess liability.</p>
+                            </div>
+                            <div style="text-align:right;">
+                                <span style="font-size:1.2rem; font-weight:600;">+45.00</span>
+                                <div class="text-muted" style="font-size:0.8rem;">Per day</div>
+                            </div>
+                        </div>
+                    </label>
+                    
+                    <label class="card" style="display:block; cursor:pointer;">
+                        <div class="card-body" style="display:flex; justify-content:space-between; align-items:center;">
+                            <div>
+                                <h4 style="margin-bottom:5px; display:flex; align-items:center; gap:10px;">
+                                    <input type="radio" name="coverage"> Standard Coverage
+                                </h4>
+                                <p class="text-muted" style="font-size:0.85rem; padding-left:25px;">Basic liability with 1,500 excess fee.</p>
+                            </div>
+                            <div style="text-align:right;">
+                                <span style="font-size:1.2rem; font-weight:600;">+15.00</span>
+                                <div class="text-muted" style="font-size:0.8rem;">Per day</div>
+                            </div>
+                        </div>
+                    </label>
+                </div>
+
+                <!-- 03 Fleet Add-ons -->
+                <div class="mb-4">
+                    <h3 style="font-size:1.2rem; border-bottom:1px solid var(--glass-border); padding-bottom:10px; margin-bottom:20px;">03. Fleet Add-ons</h3>
+                    <div class="form-row">
+                        <label class="card" style="display:block; cursor:pointer;">
+                            <div class="card-body" style="display:flex; align-items:center; gap:15px;">
+                                <input type="checkbox">
+                                <div>
+                                    <h5 style="margin-bottom:3px;">Child Seat</h5>
+                                    <span class="text-muted" style="font-size:0.75rem;">ISOFIX SECURE</span>
+                                </div>
+                            </div>
+                        </label>
+                        <label class="card" style="display:block; cursor:pointer;">
+                            <div class="card-body" style="display:flex; align-items:center; gap:15px;">
+                                <input type="checkbox">
+                                <div>
+                                    <h5 style="margin-bottom:3px;">Starlink Pro</h5>
+                                    <span class="text-muted" style="font-size:0.75rem;">GLOBAL DATA</span>
+                                </div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+                
+            </div>
+            
+            <!-- Summary Sidebar -->
+            <div>
+                <div class="card p-4" style="position:sticky; top:100px; padding:30px;">
+                    <div style="display:flex; gap:15px; margin-bottom:25px;">
+                        <div style="width:60px; height:60px; background:var(--bg-darker); display:flex; align-items:center; justify-content:center; border-radius:4px;">
+                            <i class="fa-solid fa-car-side" style="font-size:1.5rem;"></i>
+                        </div>
+                        <div>
+                            <h4 style="font-size:0.85rem; color:var(--text-muted); margin-bottom:3px;">CARCODEMANDU MODEL S-E</h4>
+                            <h3 style="font-size:1.1rem;">HIGH-PERFORMANCE<br>ELECTRIC</h3>
+                        </div>
+                    </div>
+                    
+                    <div style="font-size:0.9rem; margin-bottom:20px;">
+                        <h6 class="text-muted mb-1">Pick-up</h6>
+                        <p>Oct 24, 2024 • 10:00 AM</p>
+                        <p class="text-muted" style="font-size:0.8rem;">San Francisco Int. Airport (SFO)</p>
+                    </div>
+                    
+                    <div style="font-size:0.9rem; margin-bottom:30px; border-bottom:1px solid var(--glass-border); padding-bottom:20px;">
+                        <h6 class="text-muted mb-1">Return</h6>
+                        <p>Oct 28, 2024 • 04:00 PM</p>
+                        <p class="text-muted" style="font-size:0.8rem;">San Francisco Int. Airport (SFO)</p>
+                    </div>
+                    
+                    <div style="margin-bottom:10px; font-size:0.9rem;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span class="text-muted">Standard Rental (4 Days)</span>
+                            <span>480.00</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span class="text-muted">Premium Protection</span>
+                            <span>180.00</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <span class="text-muted">Starlink Pro Add-on</span>
+                            <span>40.00</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; border-bottom:1px solid var(--glass-border); padding-bottom:15px; margin-bottom:15px;">
+                            <span class="text-muted">Service Fee & Taxes</span>
+                            <span>74.20</span>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                            <div>
+                                <h6 class="text-muted mb-1">TOTAL PRICE</h6>
+                                <span style="font-size:0.75rem; letter-spacing:1px; color:var(--bg-card); background:var(--text-white); padding:2px 4px; border-radius:2px; font-weight:600;">ALL INCLUSIVE</span>
+                            </div>
+                            <span style="font-size:1.5rem; font-weight:600;">774.20</span>
+                        </div>
+                    </div>
+                    
+                    <button class="btn btn-primary btn-block mt-4" style="padding:16px;">Confirm & Pay <i class="fa-solid fa-lock ml-2"></i></button>
+                    <p class="text-center text-muted mt-3" style="font-size:0.75rem;"><i class="fa-solid fa-shield-check"></i> Encrypted 256-bit Secure Transaction</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer container mt-4">
+        <div class="footer-bottom">
+            <span>&copy; 2024 CARCODEMANDU PRECISION FRAMEWORK. ALL RIGHTS RESERVED.</span>
+            <div class="social-links">
+                <a href="#">Support</a>
+                <a href="#">Privacy Policy</a>
+                <a href="terms.html">Terms of Service</a>
+                <a href="fleet.html">Fleet</a>
+                <a href="#">Contact</a>
+            </div>
+        </div>
+    </footer>
+
+</body>
+</html>
