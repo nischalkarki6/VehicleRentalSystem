@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../models/Vehicle.php";
+require_once __DIR__ . "/../helpers/upload_helper.php";
 
 class VehicleController
 {
@@ -26,15 +27,37 @@ class VehicleController
         return $this->vehicleModel->getByCategory($cat);
     }
 
-    public function addVehicle(array $data): array
+    public function addVehicle(array $data, array $fileInput): array
     {
         $errors = $this->validateVehicle($data);
+
+        // ── Handle image upload ──────────────────────────────────────────────
+        $imagePath = null;
+        if (
+            isset($fileInput["tmp_name"]) &&
+            $fileInput["error"] !== UPLOAD_ERR_NO_FILE
+        ) {
+            $upload = uploadVehicleImage($fileInput);
+            if (!$upload["success"]) {
+                $errors["image"] = $upload["error"];
+            } else {
+                $imagePath = $upload["path"];
+            }
+        }
+
         if (!empty($errors)) {
             return ["success" => false, "errors" => $errors];
         }
 
+        $data["image_url"] = $imagePath;
+
         if ($this->vehicleModel->create($data)) {
             return ["success" => true];
+        }
+
+        // Cleanup uploaded file on DB failure
+        if ($imagePath) {
+            deleteVehicleImage($imagePath);
         }
 
         return [
@@ -43,15 +66,52 @@ class VehicleController
         ];
     }
 
-    public function updateVehicle(int $id, array $data): array
+    public function updateVehicle(int $id, array $data, array $fileInput): array
     {
         $errors = $this->validateVehicle($data);
+
+        // ── Handle image upload on edit ──────────────────────────────────────
+        $newImagePath = null;
+        $hasNewUpload = isset($fileInput["tmp_name"]) &&
+                        $fileInput["error"] !== UPLOAD_ERR_NO_FILE;
+
+        if ($hasNewUpload) {
+            $upload = uploadVehicleImage($fileInput);
+            if (!$upload["success"]) {
+                $errors["image"] = $upload["error"];
+            } else {
+                $newImagePath = $upload["path"];
+            }
+        }
+
         if (!empty($errors)) {
+            // Cleanup newly uploaded file if validation fails
+            if ($newImagePath) {
+                deleteVehicleImage($newImagePath);
+            }
             return ["success" => false, "errors" => $errors];
+        }
+
+        // If a new image was uploaded, delete the old one
+        if ($newImagePath) {
+            $existing = $this->vehicleModel->findById($id);
+            if ($existing && !empty($existing["ImageURL"])) {
+                deleteVehicleImage($existing["ImageURL"]);
+            }
+            $data["image_url"] = $newImagePath;
+        } else {
+            // Keep the existing image — don't overwrite with null
+            $existing = $this->vehicleModel->findById($id);
+            $data["image_url"] = $existing["ImageURL"] ?? null;
         }
 
         if ($this->vehicleModel->update($id, $data)) {
             return ["success" => true];
+        }
+
+        // Cleanup uploaded file on DB failure
+        if ($newImagePath) {
+            deleteVehicleImage($newImagePath);
         }
 
         return ["success" => false, "errors" => ["form" => "Update failed."]];
@@ -64,6 +124,12 @@ class VehicleController
 
     public function deleteVehicle(int $id): bool
     {
+        // Delete the image file from disk before removing the DB record
+        $vehicle = $this->vehicleModel->findById($id);
+        if ($vehicle && !empty($vehicle["ImageURL"])) {
+            deleteVehicleImage($vehicle["ImageURL"]);
+        }
+
         return $this->vehicleModel->delete($id);
     }
 
@@ -88,26 +154,12 @@ class VehicleController
                 "Transmission must be Manual or Automatic.";
         }
 
-        $fuelType = $d["fuel_type"] ?? "";
-        if (!in_array($fuelType, ["Petrol", "Diesel", "Electric"])) {
-            $errors["fuel_type"] =
-                "Fuel type must be Petrol, Diesel, or Electric.";
-        }
-
         if (
             !isset($d["daily_rate"]) ||
             !is_numeric($d["daily_rate"]) ||
             $d["daily_rate"] <= 0
         ) {
             $errors["daily_rate"] = "Invalid daily rate.";
-        }
-
-        // Validate engine_cc if provided (must be positive integer)
-        if (
-            !empty($d["engine_cc"]) &&
-            (!is_numeric($d["engine_cc"]) || (int) $d["engine_cc"] <= 0)
-        ) {
-            $errors["engine_cc"] = "Engine CC must be a positive number.";
         }
 
         return $errors;

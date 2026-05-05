@@ -31,8 +31,7 @@ class HomeController
         return [
             "vehicles" => $realVehicleCount > 0 ? $realVehicleCount : 2000,
             "customers" => $realCustomerCount > 0 ? $realCustomerCount : 5000,
-            "drivers" => 3000, // Static marketing number
-            "years" => 15, // Static experience years
+            "years" => 15,
         ];
     }
 }

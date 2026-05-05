@@ -1,8 +1,9 @@
-/* ── Admin Panel CSS ─────────────────────────────────────────────────────── */
+/* ── Admin Panel ─────────────────────────────────────────────────────────── */
+@import url("dashboard.css");
 
 .admin-wrap {
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 250px 1fr;
   gap: 2rem;
   margin-top: 2rem;
   margin-bottom: 4rem;
@@ -11,13 +12,13 @@
 
 /* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .admin-sidebar {
-  background: #0f1115;
-  border-radius: 16px;
+  background: var(--black);
+  border-radius: var(--radius-lg);
   padding: 1.5rem;
   height: fit-content;
   position: sticky;
   top: 2rem;
-  color: #fff;
+  color: var(--surface);
 }
 
 .admin-brand {
@@ -25,166 +26,183 @@
   align-items: center;
   gap: 0.75rem;
   padding-bottom: 1.5rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
   margin-bottom: 1.5rem;
 }
 
 .admin-brand strong {
   display: block;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
+
 .admin-brand small {
-  color: #999;
-  font-size: 0.78rem;
+  color: #888;
+  font-size: 0.75rem;
 }
 
 .admin-nav {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.2rem;
 }
 
 .admin-nav-item {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  padding: 0.85rem 1rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radius-md);
+  font-size: 0.88rem;
   font-weight: 500;
-  color: #aaa;
+  color: #9ca3af;
   text-decoration: none;
-  transition: all 0.2s;
+  transition:
+    background-color var(--duration) var(--ease),
+    color var(--duration) var(--ease);
   position: relative;
 }
 
 .admin-nav-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  color: #fff;
+  background: rgba(255,255,255,0.08);
+  color: var(--surface);
 }
+
 .admin-nav-item.active {
-  background: #fff;
-  color: #0f1115;
+  background: var(--surface);
+  color: var(--black);
   font-weight: 700;
 }
+
 .admin-logout:hover {
-  color: #ff6b6b;
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
 }
+
 .admin-divider {
   border: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-  margin: 0.75rem 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 0.6rem 0;
 }
 
 .badge-pill {
-  background: #e65100;
-  color: #fff;
-  border-radius: 99px;
-  font-size: 0.7rem;
+  background: #ea580c;
+  color: var(--surface);
+  border-radius: var(--radius-full);
+  font-size: 0.68rem;
   font-weight: 700;
-  padding: 0.1rem 0.5rem;
+  padding: 0.1rem 0.55rem;
   margin-left: auto;
 }
 
-/* ── Content area ────────────────────────────────────────────────────────── */
+/* ── Content Area ────────────────────────────────────────────────────────── */
 .admin-content {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
   padding: 2.5rem;
 }
 
 .admin-page-title {
   margin: 0 0 2rem;
-  font-size: 1.75rem;
+  font-size: 1.6rem;
   font-weight: 800;
+  letter-spacing: -0.5px;
 }
 
-/* ── Stats cards ─────────────────────────────────────────────────────────── */
+/* ── Stats Cards ─────────────────────────────────────────────────────────── */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 1.25rem;
   margin-bottom: 2.5rem;
 }
 
 .stat-card {
-  background: #f8f9fa;
-  border-radius: 12px;
+  background: var(--gray-bg);
+  border-radius: var(--radius-md);
   padding: 1.5rem;
   text-align: center;
-  border: 1px solid #eee;
+  border: 1px solid var(--border);
   transition:
-    transform 0.2s,
-    box-shadow 0.2s;
+    transform var(--duration) var(--ease),
+    box-shadow var(--duration) var(--ease);
 }
 
 .stat-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: var(--shadow-md);
 }
 
 .stat-icon {
-  font-size: 2rem;
+  font-size: 1.75rem;
   margin-bottom: 0.5rem;
   display: block;
 }
+
 .stat-value {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #0f1115;
+  color: var(--black);
+  letter-spacing: -0.5px;
 }
+
 .stat-label {
-  font-size: 0.78rem;
-  color: #666;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-muted);
   margin-top: 0.25rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 
-/* ── Action buttons ──────────────────────────────────────────────────────── */
+/* ── Action Buttons ──────────────────────────────────────────────────────── */
 .btn-xs {
   padding: 0.3rem 0.7rem;
   border: none;
-  border-radius: 4px;
-  font-size: 0.78rem;
-  font-weight: 700;
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 600;
   cursor: pointer;
   white-space: nowrap;
-  transition: opacity 0.2s;
+  transition:
+    opacity var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease);
+  font-family: inherit;
 }
+
 .btn-xs:hover {
-  opacity: 0.8;
+  opacity: 0.82;
+  transform: translateY(-1px);
 }
-.btn-approve {
-  background: #e8f5e9;
-  color: #2e7d32;
+
+.btn-xs:active {
+  transform: translateY(0);
 }
-.btn-reject {
-  background: #ffebee;
-  color: #c62828;
-}
-.btn-complete {
-  background: #e3f2fd;
-  color: #1565c0;
-}
+
+.btn-approve  { background: #f0fdf4; color: #16a34a; }
+.btn-reject   { background: #fef2f2; color: #dc2626; }
+.btn-complete { background: #eff6ff; color: #1d4ed8; }
+
 .action-btns {
   display: flex;
   gap: 0.4rem;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
-/* ── Filter bar ──────────────────────────────────────────────────────────── */
+/* ── Filter Bar ──────────────────────────────────────────────────────────── */
 .filter-bar {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
-@media (max-width: 900px) {
+@media (max-width: 960px) {
   .admin-wrap {
     grid-template-columns: 1fr;
   }

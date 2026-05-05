@@ -10,6 +10,4 @@ document.addEventListener("DOMContentLoaded", () => {
       this.textContent = type === "password" ? "visibility_off" : "visibility";
     });
   }
-
-  // Removed JS form interceptor to allow PHP backend to handle registration
 });

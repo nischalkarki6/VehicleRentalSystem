@@ -221,7 +221,7 @@ include "view/layout/header.php";
                  placeholder="Street, City, Country" />
         </div>
 
-        <button type="submit" class="btn-dash-primary">
+        <button type="submit" class="btn-primary">
           <span class="material-symbols-outlined">save</span> Save Changes
         </button>
       </form>
@@ -288,7 +288,7 @@ include "view/layout/header.php";
           <?php endif; ?>
         </div>
 
-        <button type="submit" class="btn-dash-primary">
+        <button type="submit" class="btn-primary">
           <span class="material-symbols-outlined">lock_reset</span> Update Password
         </button>
       </form>
@@ -301,7 +301,7 @@ include "view/layout/header.php";
         <div class="empty-state">
           <span class="material-symbols-outlined">car_rental</span>
           <p>No rentals found.</p>
-          <a href="fleet.php" class="btn-dash-primary text-decoration-none d-inline-flex mt-1">
+          <a href="fleet.php" class="btn-primary mt-1">
             Browse Fleet
           </a>
         </div>

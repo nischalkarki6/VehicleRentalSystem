@@ -44,7 +44,7 @@ include "view/layout/header.php";
     </p>
   </div>
   
-  <div class="auth-container">
+  <div class="contact-form-card">
     <?php if ($success): ?>
       <div class="alert alert-success mb-2">
         <span class="material-symbols-outlined">send</span>
@@ -60,37 +60,43 @@ include "view/layout/header.php";
     <form action="contact.php" method="POST">
       <div class="form-group">
         <label>Your Name</label>
-        <input
-          type="text"
-          name="name"
-          class="form-control"
-          placeholder="Enter Name:"
-          required
-          value="<?= htmlspecialchars($name ?? "") ?>"
-        />
+        <div class="input-wrapper">
+          <input
+            type="text"
+            name="name"
+            class="form-control"
+            placeholder="Enter Your Name"
+            required
+            value="<?= htmlspecialchars($name ?? "") ?>"
+          />
+        </div>
       </div>
       <div class="form-group">
         <label>Email Address</label>
-        <input
-          type="email"
-          name="email"
-          class="form-control"
-          placeholder="Enter Email:"
-          required
-          value="<?= htmlspecialchars($email ?? "") ?>"
-        />
+        <div class="input-wrapper">
+          <input
+            type="email"
+            name="email"
+            class="form-control"
+            placeholder="Enter Your Email"
+            required
+            value="<?= htmlspecialchars($email ?? "") ?>"
+          />
+        </div>
       </div>
       <div class="form-group">
         <label>Message</label>
-        <textarea
-          name="message"
-          class="form-control"
-          rows="4"
-          placeholder="Enter Message:"
-          required
-        ><?= htmlspecialchars($message ?? "") ?></textarea>
+        <div class="input-wrapper">
+          <textarea
+            name="message"
+            class="form-control"
+            rows="4"
+            placeholder="Enter Your Message"
+            required
+          ><?= htmlspecialchars($message ?? "") ?></textarea>
+        </div>
       </div>
-      <button class="btn-primary btn-full" type="submit">Send Message</button>
+      <button class="btn-primary w-100" type="submit">Send Message</button>
     </form>
   </div>
 

@@ -115,7 +115,7 @@ include "view/layout/auth_header.php";
             <label for="phone">Phone Number</label>
             <div class="input-wrapper">
               <input type="tel" id="phone" name="phone"
-                     placeholder="+977 98XXXXXXXX"
+                     placeholder="Enter your phone no."
                      value="<?= $old["phone"] ?? "" ?>"
                      class="<?= isset($errors["phone"]) ? "input-error" : "" ?>"
                      required />
@@ -148,7 +148,7 @@ include "view/layout/auth_header.php";
           <label for="address">Home Address <span style="color:#999;font-size:0.8em">(optional)</span></label>
           <div class="input-wrapper">
             <input type="text" id="address" name="address"
-                   placeholder="Kathmandu, Nepal"
+                   placeholder="Enter address"
                    value="<?= $old["address"] ?? "" ?>" />
           </div>
         </div>
@@ -189,7 +189,7 @@ include "view/layout/auth_header.php";
           <?php endif; ?>
         </div>
 
-        <button class="auth-btn" type="submit" id="signupBtn">
+        <button class="auth-btn btn-primary" type="submit" id="signupBtn">
           <span>Create Account</span>
           <span class="material-symbols-outlined">arrow_forward</span>
         </button>

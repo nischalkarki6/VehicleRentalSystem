@@ -52,7 +52,7 @@ include "view/layout/header.php";
                 <input
                   type="text"
                   id="pickup-location"
-                  placeholder="Kathmandu, Pokhara..."
+                  placeholder="Enter Pickup location..."
                   required
                 />
               </div>
@@ -96,10 +96,6 @@ include "view/layout/header.php";
           <div class="stat-box">
             <h2><?= $stats["vehicles"] ?>+</h2>
             <p>NO. OF VEHICLES</p>
-          </div>
-          <div class="stat-box">
-            <h2><?= $stats["drivers"] ?>+</h2>
-            <p>NO. OF DRIVERS</p>
           </div>
           <div class="stat-box">
             <h2><?= $stats["customers"] ?>+</h2>

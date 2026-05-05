@@ -4,6 +4,7 @@ include __DIR__ . "/auth_header.php";
 ?>
   </head>
   <body>
+    <?php if (!isset($page) || $page !== "admin"): ?>
     <nav class="navbar">
       <div class="nav-content">
         <div class="nav-logo-wrap">
@@ -44,3 +45,4 @@ include __DIR__ . "/auth_header.php";
         </div>
       </div>
     </nav>
+    <?php endif; ?>

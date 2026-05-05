@@ -1,111 +1,127 @@
-/* --- Contact Page Form specific properties --- */
+/* ── Contact Page ────────────────────────────────────────────────────────── */
 .page-container {
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 
-/* Contact Form Container */
-.auth-container {
+/* ── Contact Form Card ───────────────────────────────────────────────────── */
+.contact-form-card {
   width: 100%;
   max-width: 500px;
-  background: var(--white);
-  padding: 4rem;
-  border-radius: 8px;
-  box-shadow: 0 40px 100px rgba(0, 0, 0, 0.04);
-  border: 1px solid var(--border-color);
+  background: var(--surface);
+  padding: 3.5rem;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  border: 1px solid var(--border);
 }
 
+/* ── Form Groups ─────────────────────────────────────────────────────────── */
 .form-group {
-  margin-bottom: 2rem;
+  margin-bottom: 1.75rem;
 }
 
 .form-group label {
   display: block;
   font-size: 0.65rem;
-  font-weight: 800;
+  font-weight: 700;
   text-transform: uppercase;
   color: var(--text-muted);
-  margin-bottom: 0.75rem;
-  letter-spacing: 1px;
+  margin-bottom: 0.6rem;
+  letter-spacing: 0.8px;
+}
+
+.input-wrapper {
+  position: relative;
 }
 
 .form-control {
   width: 100%;
-  padding: 1.1rem 1.25rem;
+  padding: 1rem 1.1rem;
   background: var(--gray-bg);
-  border: 1px solid transparent;
-  border-radius: 4px;
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-sm);
   font-family: "Inter", sans-serif;
   font-size: 0.9rem;
   font-weight: 500;
   color: var(--black);
-  transition: all 0.2s;
+  transition: all var(--duration) var(--ease);
   outline: none;
 }
 
 .form-control:focus {
-  background: var(--white);
+  background: var(--surface);
   border-color: var(--black);
+  box-shadow: 0 0 0 3px rgba(15,17,21,0.07);
+}
+
+.form-control::placeholder {
+  color: var(--text-subtle);
 }
 
 textarea.form-control {
   resize: vertical;
   min-height: 140px;
+  line-height: 1.6;
 }
 
-.btn-full {
-  width: 100%;
-  padding: 1.2rem;
-  margin-top: 1rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  font-size: 0.8rem;
-  transition: transform 0.2s;
-}
-
-.btn-full:hover {
-  transform: translateY(-2px);
-}
-
-/* Info Section (Optional enhancement) */
+/* ── Contact Meta Info ───────────────────────────────────────────────────── */
 .contact-meta-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 2rem;
+  gap: 2.5rem;
   margin-top: 5rem;
   width: 100%;
-  max-width: 1000px;
+  max-width: 1100px;
 }
 
 .meta-box {
   text-align: center;
-  padding: 2rem;
+  padding: 2.5rem;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  transition: all var(--duration) var(--ease);
+}
+
+.meta-box:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-5px);
+  border-color: var(--text-muted);
 }
 
 .meta-box .material-symbols-outlined {
   font-size: 2rem;
   margin-bottom: 1rem;
   color: var(--black);
+  display: block;
 }
 
 .meta-box h3 {
   font-size: 0.75rem;
   font-weight: 800;
   letter-spacing: 1px;
-  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  margin-bottom: 0.75rem;
+  color: var(--black);
 }
 
 .meta-box p {
   color: var(--text-muted);
-  font-size: 0.875rem;
+  font-size: 0.9rem;
+  line-height: 1.6;
 }
 
-@media (max-width: 768px) {
-  .auth-container {
-    padding: 2rem;
-  }
+/* ── Responsive ──────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
   .contact-meta-grid {
     grid-template-columns: 1fr;
+    max-width: 450px;
+  }
+}
+
+@media (max-width: 600px) {
+  .contact-form-card {
+    padding: 2.5rem 1.75rem;
   }
 }

@@ -32,113 +32,205 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
-$title = "Complete Booking | DriveEase";
+$title = htmlspecialchars($vehicle["Name"]) . " | DriveEase";
 $page = "bookings";
 $css = "bookings";
 $js = "bookings";
 include "view/layout/header.php";
 ?>
 
-<main class="page-container container">
-  <div class="booking-flow">
-    <div class="booking-summary-card">
-      <div class="summary-header">
-        <h2>Confirm Your Rental</h2>
-        <p>You are booking <strong><?= htmlspecialchars(
-            $vehicle["Name"],
-        ) ?></strong></p>
+<main class="vd-container">
+  <!-- Hero Section -->
+  <div class="vd-hero">
+    <div class="vd-hero-img" style="background-image: url('<?= htmlspecialchars($vehicle['ImageURL'] ?: 'https://via.placeholder.com/1200x600?text=No+Image') ?>')"></div>
+  </div>
+
+  <div class="vd-content-grid container">
+    <!-- Main Left Column -->
+    <div class="vd-main-col">
+      <div class="vd-header">
+        <div style="margin-bottom: 1.5rem;">
+          <a href="javascript:history.back()" class="text-decoration-none d-flex align-items-center gap-04" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">
+            <span class="material-symbols-outlined" style="font-size: 1.1rem;">arrow_back</span>
+            BACK TO RESULTS
+          </a>
+        </div>
+        <span class="vd-eyebrow">PREMIUM SELECTION</span>
+        <h1><?= htmlspecialchars($vehicle["Name"]) ?></h1>
+        <p>Experience peak performance and comfort with our meticulously maintained <?= htmlspecialchars(strtolower($vehicle["Category"])) ?>.</p>
       </div>
-      
-      <div class="summary-body">
-        <div class="vehicle-preview">
-          <?php if (!empty($vehicle["ImageURL"])): ?>
-            <img src="<?= htmlspecialchars(
-                $vehicle["ImageURL"],
-            ) ?>" alt="<?= htmlspecialchars($vehicle["Name"]) ?>" />
-          <?php else: ?>
-            <div class="img-placeholder"><span class="material-symbols-outlined">directions_car</span></div>
+
+      <div class="vd-section">
+        <h2>Technical Specifications</h2>
+        <div class="specs-grid">
+          <div class="spec-box"><span class="material-symbols-outlined">category</span> <small>CATEGORY</small> <strong><?= htmlspecialchars($vehicle["Category"]) ?></strong></div>
+          <?php if (!empty($vehicle["Type"])): ?>
+          <div class="spec-box"><span class="material-symbols-outlined">style</span> <small>TYPE</small> <strong><?= htmlspecialchars($vehicle["Type"]) ?></strong></div>
           <?php endif; ?>
+          <div class="spec-box"><span class="material-symbols-outlined">settings</span> <small>TRANSMISSION</small> <strong><?= htmlspecialchars($vehicle["Transmission"]) ?></strong></div>
         </div>
-        
-        <div class="price-info">
-          <div class="price-row">
-            <span>Daily Rate</span>
-            <span>NPR <?= number_format($vehicle["DailyRate"], 2) ?></span>
+      </div>
+
+      <div class="vd-section">
+        <h2>The Driving Experience</h2>
+        <p class="text-muted">The <?= htmlspecialchars($vehicle["Name"]) ?> is engineered to deliver a seamless blend of performance and reliability. Every component is rigorously tested to ensure maximum safety and comfort during your journey. Whether you're navigating urban environments or exploring rural landscapes, this <?= htmlspecialchars(strtolower($vehicle["Category"])) ?> provides the agility and power you need for a memorable travel experience.</p>
+      </div>
+
+      <div class="vd-section safety-box">
+        <h2>Safety & Reliability</h2>
+        <div class="safety-item">
+          <span class="material-symbols-outlined">shield</span>
+          <div>
+            <strong>Full Insurance Coverage</strong>
+            <small>Comprehensive protection for total peace of mind.</small>
           </div>
-          <div class="price-row">
-            <span>Duration</span>
-            <span id="duration-display">1 day</span>
-          </div>
-          <div class="price-row total">
-            <span>Estimated Total</span>
-            <span id="estimated-total">NPR <?= number_format(
-                $vehicle["DailyRate"],
-                2,
-            ) ?></span>
+        </div>
+        <div class="safety-item">
+          <span class="material-symbols-outlined">verified</span>
+          <div>
+            <strong>Meticulously Inspected</strong>
+            <small>Every vehicle undergoes a 50-point safety check before rental.</small>
           </div>
         </div>
       </div>
+
+      <!-- Similar Premium Fleet (Dynamic) -->
+      <?php 
+        $stmt = $pdo->prepare("SELECT * FROM Vehicles WHERE Category = ? AND VehicleID != ? LIMIT 4");
+        $stmt->execute([$vehicle["Category"], $vehicle["VehicleID"]]);
+        $similar = $stmt->fetchAll();
+      ?>
+      <?php if (!empty($similar)): ?>
+      <div class="vd-similar-fleet">
+        <span class="vd-eyebrow" style="text-align: center; display: block; margin-bottom: 2rem;">SIMILAR <?= strtoupper($vehicle["Category"]) ?>S</span>
+        <div class="similar-icons">
+          <?php foreach ($similar as $sv): ?>
+            <a href="bookings.php?vehicle_id=<?= $sv["VehicleID"] ?>" class="sim-icon text-decoration-none">
+              <span class="material-symbols-outlined"><?= $vehicle["Category"] === "Car" ? "directions_car" : "two_wheeler" ?></span>
+              <small><?= htmlspecialchars($sv["Name"]) ?></small>
+            </a>
+          <?php endforeach; ?>
+        </div>
+      </div>
+      <?php endif; ?>
     </div>
 
-    <div class="booking-form-wrap">
-      <form method="POST" class="auth-card w-100 no-shadow border-light">
-        <input type="hidden" name="vehicle_id" value="<?= $vehicleId ?>" />
-
-        <div class="form-row">
-          <div class="form-group">
-            <label>Start Date</label>
-            <input type="date" name="start_date" id="start_date" class="dash-input" 
-                   min="<?= date("Y-m-d") ?>"
-                   value="<?= htmlspecialchars(
-                       $_GET["start_date"] ?? date("Y-m-d"),
-                   ) ?>" required />
+    <!-- Booking Form Sidebar -->
+    <div class="vd-side-col">
+      <div class="booking-widget">
+        <div class="widget-header">
+          <div>
+            <span class="widget-eyebrow">DAILY RATE</span>
+            <div class="widget-price">Rs. <span id="base-price"><?= number_format($vehicle['DailyRate'], 0) ?></span></div>
           </div>
-          <div class="form-group">
-            <label>End Date</label>
-            <input type="date" name="end_date" id="end_date" class="dash-input" 
-                   min="<?= date("Y-m-d", strtotime("+1 day")) ?>"
-                   value="<?= htmlspecialchars(
-                       $_GET["end_date"] ?? date("Y-m-d", strtotime("+1 day")),
-                   ) ?>" required />
-          </div>
+          <span class="badge-high-demand">🔥 HIGH DEMAND</span>
         </div>
-
-        <div class="form-group">
-          <label>Pickup Location</label>
-          <input type="text" name="pickup_loc" class="dash-input" 
-                 value="<?= htmlspecialchars(
-                     $_GET["pickup"] ?? "",
-                 ) ?>" placeholder="e.g. Kathmandu Airport" required />
-        </div>
-
-        <div class="form-group">
-          <label>Dropoff Location</label>
-          <input type="text" name="dropoff_loc" class="dash-input" placeholder="e.g. Pokhara Lakeside" required />
-        </div>
-
+        
         <?php if (!empty($errors)): ?>
           <?php foreach ($errors as $field => $msg): ?>
-            <div class="alert alert-error" style="margin-bottom:0.5rem"><?= htmlspecialchars(
-                $msg,
-            ) ?></div>
+            <div style="background:#fee2e2;color:#b91c1c;padding:0.75rem;border-radius:4px;font-size:0.8rem;margin-bottom:1rem;">
+              <?= htmlspecialchars($msg) ?>
+            </div>
           <?php endforeach; ?>
         <?php endif; ?>
 
-        <p style="font-size:0.8rem;color:#999;margin-top:1.5rem">
-          <span class="material-symbols-outlined" style="font-size:0.9rem;vertical-align:middle">info</span>
-          Final cost is calculated server-side based on the daily rate and rental duration.
-        </p>
+        <form method="POST" class="widget-form" id="bookingForm">
+          <input type="hidden" name="vehicle_id" value="<?= $vehicleId ?>" />
+          <input type="hidden" id="daily_rate" value="<?= $vehicle['DailyRate'] ?>" />
+          
+          <div class="form-group-vd">
+            <label>PICKUP LOCATION</label>
+            <div class="input-with-icon">
+              <span class="material-symbols-outlined">location_on</span>
+              <input type="text" name="pickup_loc" value="<?= htmlspecialchars($_GET['pickup'] ?? 'Tribhuvan International Airport') ?>" required>
+            </div>
+          </div>
+          <!-- Hidden dropoff so validation passes -->
+          <input type="hidden" name="dropoff_loc" value="<?= htmlspecialchars($_GET['dropoff'] ?? $_GET['pickup'] ?? 'Tribhuvan International Airport') ?>">
 
-        <button type="submit" class="auth-btn mt-1">
-          <span>Confirm Booking</span>
-          <span class="material-symbols-outlined">check_circle</span>
-        </button>
-      </form>
+          <div class="vd-row">
+            <div class="form-group-vd">
+              <label>START DATE</label>
+              <input type="date" name="start_date" id="start_date" value="<?= htmlspecialchars($_GET['start_date'] ?? date('Y-m-d')) ?>" min="<?= date('Y-m-d') ?>" required>
+            </div>
+            <div class="form-group-vd">
+              <label>END DATE</label>
+              <?php 
+                $startDateStr = $_GET['start_date'] ?? date('Y-m-d');
+                $defaultEndDate = date('Y-m-d', strtotime($startDateStr . ' + 3 days'));
+                $minEndDate = date('Y-m-d', strtotime($startDateStr . ' + 1 day'));
+              ?>
+              <input type="date" name="end_date" id="end_date" value="<?= $defaultEndDate ?>" min="<?= $minEndDate ?>" required>
+            </div>
+          </div>
+
+          <?php 
+            $startDt = new DateTime($startDateStr);
+            $endDt = new DateTime($defaultEndDate);
+            $diffDays = max(1, (int)$endDt->diff($startDt)->days);
+            $initialRentalCost = $diffDays * $vehicle['DailyRate'];
+            $initialTotalCost = $initialRentalCost + 3300;
+          ?>
+          <div class="receipt">
+            <div class="receipt-row">
+              <span id="rental-days-label">Rental (<?= $diffDays ?> day<?= $diffDays > 1 ? 's' : '' ?>)</span>
+              <span id="rental-cost-val">Rs. <?= number_format($initialRentalCost, 0) ?></span>
+            </div>
+            <div class="receipt-row">
+              <span>Premium Insurance</span>
+              <span>Rs. 3,300</span>
+            </div>
+            <div class="receipt-row total">
+              <span>Total</span>
+              <span id="total-cost-val">Rs. <?= number_format($initialTotalCost, 0) ?></span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn-confirm-booking">Confirm Booking <span class="material-symbols-outlined">arrow_forward</span></button>
+          <div class="no-credit-card">NO CREDIT CARD REQUIRED UNTIL CONFIRMATION</div>
+        </form>
+      </div>
     </div>
   </div>
 </main>
 
-  <input type="hidden" id="vehicle-daily-rate" value="<?= htmlspecialchars(
-      $vehicle["DailyRate"],
-  ) ?>" />
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const startDate = document.getElementById("start_date");
+  const endDate = document.getElementById("end_date");
+  const dailyRate = parseFloat(document.getElementById("daily_rate").value);
+  const insuranceFee = 3300;
+  
+  function updateReceipt() {
+    const start = new Date(startDate.value);
+    const end = new Date(endDate.value);
+    
+    if(start && end && end > start) {
+      const diffTime = Math.abs(end - start);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      const rentalCost = diffDays * dailyRate;
+      const totalCost = rentalCost + insuranceFee;
+      
+      document.getElementById("rental-days-label").textContent = `Rental (${diffDays} day${diffDays > 1 ? 's' : ''})`;
+      document.getElementById("rental-cost-val").textContent = "Rs. " + rentalCost.toLocaleString('en-US', {maximumFractionDigits:0});
+      document.getElementById("total-cost-val").textContent = "Rs. " + totalCost.toLocaleString('en-US', {maximumFractionDigits:0});
+    }
+  }
+  
+  startDate.addEventListener("change", () => {
+    // Ensure end date is after start date
+    if(new Date(endDate.value) <= new Date(startDate.value)) {
+      const nextDay = new Date(startDate.value);
+      nextDay.setDate(nextDay.getDate() + 1);
+      endDate.value = nextDay.toISOString().split('T')[0];
+    }
+    updateReceipt();
+  });
+  
+  endDate.addEventListener("change", updateReceipt);
+  updateReceipt();
+});
+</script>
+
 <?php include "view/layout/footer.php"; ?>

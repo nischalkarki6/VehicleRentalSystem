@@ -92,7 +92,7 @@ include "view/layout/auth_header.php";
           <a href="reset.php" class="forgot-pass">Forgot Password?</a>
         </div>
 
-        <button class="auth-btn" type="submit" id="loginBtn">
+        <button class="auth-btn btn-primary" type="submit" id="loginBtn">
           <span>Sign In</span>
           <span class="material-symbols-outlined">arrow_forward</span>
         </button>

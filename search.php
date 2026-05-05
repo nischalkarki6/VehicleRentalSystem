@@ -15,7 +15,7 @@ $vehicles = $vehCtrl->getByCategory($category);
 
 $title = "Search Results | DriveEase";
 $page = "search";
-$css = "fleet"; // Reusing fleet styles for consistency
+$css = "search"; // Using search styles for this page
 include "view/layout/header.php";
 ?>
 
@@ -29,63 +29,43 @@ include "view/layout/header.php";
 ) ?> from <?= htmlspecialchars($pickup) ?>.</p>
   </div>
 
-  <div class="fleet-grid">
+  <div class="v-grid">
     <?php if (empty($vehicles)): ?>
-      <div class="empty-state">
-        <p>No <?= strtolower(
-            $category,
-        ) ?>s available for the selected criteria.</p>
-        <a href="fleet.php" class="btn-primary mt-1 d-inline-block">View All Fleet</a>
+      <div class="text-center" style="grid-column: 1 / -1; padding: 4rem;">
+        <p class="text-muted mb-15">No <?= strtolower($category) ?>s available for the selected criteria.</p>
+        <a href="fleet.php" class="btn-primary">View All Fleet</a>
       </div>
     <?php else: ?>
       <?php foreach ($vehicles as $v): ?>
-        <div class="fleet-card">
-          <div class="fleet-img-wrapper">
-            <?php if (!empty($v["ImageURL"])): ?>
-              <img src="<?= htmlspecialchars(
-                  $v["ImageURL"],
-              ) ?>" class="fleet-img" alt="<?= htmlspecialchars(
-    $v["Name"],
-) ?>" />
-            <?php else: ?>
-              <div class="fleet-img-placeholder">
-                <span class="material-symbols-outlined">directions_car</span>
+        <div class="v-card">
+          <div class="v-card-img" style="background-image: url('<?= htmlspecialchars($v["ImageURL"] ?: "https://via.placeholder.com/400x240?text=No+Image") ?>');"></div>
+          <div class="v-card-body">
+            <div class="v-card-header">
+              <div class="v-card-tags">
+                <span class="v-card-tag available">Available</span>
+                <span class="v-card-tag type"><?= htmlspecialchars($v["Type"] ?: $v["Category"]) ?></span>
               </div>
-            <?php endif; ?>
-            <?php if (!empty($v["Type"])): ?>
-              <div class="fleet-badge"><?= htmlspecialchars($v["Type"]) ?></div>
-            <?php endif; ?>
-          </div>
-          
-          <div class="fleet-details">
+              <div class="v-card-price">
+                Rs. <?= number_format($v["DailyRate"], 0) ?>
+                <small>/ day</small>
+              </div>
+            </div>
             <h3><?= htmlspecialchars($v["Name"]) ?></h3>
-            <div class="fleet-specs">
-              <span><span class="material-symbols-outlined">settings</span> <?= $v[
-                  "Transmission"
-              ] ?></span>
-              <span><span class="material-symbols-outlined">local_gas_station</span> <?= $v[
-                  "FuelType"
-              ] ?></span>
+            <div class="v-card-specs">
+              <span><span class="material-symbols-outlined">settings</span> <?= strtoupper(htmlspecialchars($v["Transmission"])) ?></span>
             </div>
-            
-            <div class="fleet-footer">
-              <div class="fleet-price">
-                <span class="price-val">NPR <?= number_format(
-                    $v["DailyRate"],
-                    0,
-                ) ?></span>
-                <span class="price-unit">/ day</span>
-              </div>
-              <?php if (isset($_SESSION["user_id"])): ?>
-                <button class="btn-primary" onclick="window.location.href='bookings.php?vehicle_id=<?= $v[
-                    "VehicleID"
-                ] ?>&start_date=<?= urlencode($date) ?>&pickup=<?= urlencode(
-    $pickup,
-) ?>'">Book Now</button>
-              <?php else: ?>
-                <a href="login.php" class="btn-primary" style="text-decoration:none;text-align:center">Login to Book</a>
-              <?php endif; ?>
-            </div>
+            <?php 
+              $bookUrl = "bookings.php?vehicle_id=" . $v["VehicleID"] . 
+                         "&start_date=" . urlencode($date) . 
+                         "&pickup=" . urlencode($pickup) . 
+                         "&dropoff=" . urlencode($_GET['dropoff'] ?? $pickup) . 
+                         "&travel=" . urlencode($_GET['travel'] ?? $pickup);
+            ?>
+            <?php if (isset($_SESSION["user_id"])): ?>
+              <button class="btn-book" onclick="window.location.href='<?= $bookUrl ?>'">Book Now</button>
+            <?php else: ?>
+              <a href="login.php?redirect=<?= urlencode($bookUrl) ?>" class="btn-book">Login to Book</a>
+            <?php endif; ?>
           </div>
         </div>
       <?php endforeach; ?>

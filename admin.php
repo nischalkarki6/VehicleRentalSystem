@@ -20,12 +20,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $bookCtrl->updateStatus($rentalId, $status);
             setFlash("success", "Booking #$rentalId updated to $status.");
         }
-        redirect("admin.php?tab=bookings");
+        $tab = $_POST["tab"] ?? "bookings";
+        redirect("admin.php?tab=" . urlencode($tab));
     }
 
     // Add vehicle
     if ($action === "add_vehicle") {
-        $result = $vehCtrl->addVehicle($_POST);
+        $result = $vehCtrl->addVehicle($_POST, $_FILES["image"] ?? ["error" => UPLOAD_ERR_NO_FILE]);
         if ($result["success"]) {
             setFlash("success", "Vehicle added successfully.");
             redirect("admin.php?tab=fleet");
@@ -38,6 +39,38 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     if ($action === "toggle_vehicle") {
         $vehCtrl->toggleAvailability((int) $_POST["vehicle_id"]);
         redirect("admin.php?tab=fleet");
+    }
+
+    // Edit vehicle
+    if ($action === "edit_vehicle") {
+        $vid = (int) $_POST["vehicle_id"];
+        $result = $vehCtrl->updateVehicle($vid, $_POST, $_FILES["image"] ?? ["error" => UPLOAD_ERR_NO_FILE]);
+        if ($result["success"]) {
+            setFlash("success", "Vehicle updated successfully.");
+            redirect("admin.php?tab=fleet");
+        } else {
+            $vehicleErrors = $result["errors"];
+        }
+    }
+
+    // Delete user
+    if ($action === "delete_user") {
+        $uid = (int) $_POST["user_id"];
+        if ($uid !== 1) { // Prevent deleting super admin
+            $pdo->prepare("DELETE FROM Users WHERE UserID = ?")->execute([$uid]);
+            setFlash("success", "User deleted.");
+        } else {
+            setFlash("error", "Cannot delete super admin.");
+        }
+        redirect("admin.php?tab=users");
+    }
+
+    // Delete message
+    if ($action === "delete_message") {
+        $mid = (int) $_POST["message_id"];
+        $pdo->prepare("DELETE FROM ContactMessages WHERE MessageID = ?")->execute([$mid]);
+        setFlash("success", "Message deleted.");
+        redirect("admin.php?tab=messages");
     }
 
     // Delete vehicle (only if no pending/active bookings)
@@ -147,8 +180,8 @@ include "view/layout/header.php";
         <span class="material-symbols-outlined">mail</span> Messages
       </a>
       <hr class="admin-divider">
-      <a href="dashboard.php"           class="admin-nav-item">
-        <span class="material-symbols-outlined">person</span> My Profile
+      <a href="logout.php" class="admin-nav-item admin-logout">
+        <span class="material-symbols-outlined">logout</span> Logout
       </a>
     </nav>
   </div>
@@ -228,18 +261,16 @@ include "view/layout/header.php";
                 <?php if ($b["Status"] === "Pending"): ?>
                   <form method="POST" class="d-inline-block">
                     <input type="hidden" name="action"    value="update_booking_status">
-                    <input type="hidden" name="rental_id" value="<?= $b[
-                        "RentalID"
-                    ] ?>">
+                    <input type="hidden" name="rental_id" value="<?= $b["RentalID"] ?>">
                     <input type="hidden" name="status"    value="Active">
+                    <input type="hidden" name="tab"       value="overview">
                     <button type="submit" class="btn-xs btn-approve">Approve</button>
                   </form>
                   <form method="POST" class="d-inline-block">
                     <input type="hidden" name="action"    value="update_booking_status">
-                    <input type="hidden" name="rental_id" value="<?= $b[
-                        "RentalID"
-                    ] ?>">
+                    <input type="hidden" name="rental_id" value="<?= $b["RentalID"] ?>">
                     <input type="hidden" name="status"    value="Cancelled">
+                    <input type="hidden" name="tab"       value="overview">
                     <button type="submit" class="btn-xs btn-reject">Reject</button>
                   </form>
                 <?php else: ?>
@@ -317,7 +348,7 @@ include "view/layout/header.php";
                         "RentalID"
                     ] ?>">
                     <input type="hidden" name="status"    value="Active">
-                    <button type="submit" class="btn-xs btn-approve">✓ Approve</button>
+                    <button type="submit" class="btn-xs btn-approve"><span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle; margin-right:2px;">check</span> Approve</button>
                   </form>
                   <form method="POST">
                     <input type="hidden" name="action"    value="update_booking_status">
@@ -325,7 +356,7 @@ include "view/layout/header.php";
                         "RentalID"
                     ] ?>">
                     <input type="hidden" name="status"    value="Cancelled">
-                    <button type="submit" class="btn-xs btn-reject">✕ Reject</button>
+                    <button type="submit" class="btn-xs btn-reject"><span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle; margin-right:2px;">close</span> Reject</button>
                   </form>
                 <?php elseif ($b["Status"] === "Active"): ?>
                   <form method="POST">
@@ -360,7 +391,7 @@ include "view/layout/header.php";
           ? "1"
           : "0" ?>" class="d-none bg-light p-2 mb-2 rounded-12 border-light">
         <h3 class="m-0 mb-15">Add New Vehicle</h3>
-        <form method="POST" id="vehicleForm" novalidate>
+        <form method="POST" id="vehicleForm" enctype="multipart/form-data" novalidate>
           <input type="hidden" name="action" value="add_vehicle">
 
           <div class="form-row-dash">
@@ -371,7 +402,7 @@ include "view/layout/header.php";
               )
                   ? "input-error"
                   : "" ?>"
-                     placeholder="e.g. Toyota RAV4" required value="<?= htmlspecialchars(
+                     placeholder="Car name" required value="<?= htmlspecialchars(
                          $_POST["name"] ?? "",
                      ) ?>"/>
               <?php if (
@@ -402,7 +433,7 @@ include "view/layout/header.php";
           <div class="form-row-dash">
             <div class="form-group-dash">
               <label>Type <small style="color:#999">(SUV, Sedan, Cruiser…)</small></label>
-              <input type="text" name="type" class="dash-input" placeholder="e.g. SUV" value="<?= htmlspecialchars(
+              <input type="text" name="type" class="dash-input" placeholder="Type" value="<?= htmlspecialchars(
                   $_POST["type"] ?? "",
               ) ?>"/>
             </div>
@@ -429,45 +460,13 @@ include "view/layout/header.php";
 
           <div class="form-row-dash">
             <div class="form-group-dash">
-              <label>Fuel Type *</label>
-              <select name="fuel_type" class="dash-input" required>
-                <option value="">Select…</option>
-                <option value="Petrol"   <?= ($_POST["fuel_type"] ?? "") ===
-                "Petrol"
-                    ? "selected"
-                    : "" ?>>Petrol</option>
-                <option value="Diesel"   <?= ($_POST["fuel_type"] ?? "") ===
-                "Diesel"
-                    ? "selected"
-                    : "" ?>>Diesel</option>
-                <option value="Electric" <?= ($_POST["fuel_type"] ?? "") ===
-                "Electric"
-                    ? "selected"
-                    : "" ?>>Electric</option>
-              </select>
-              <?php if (
-                  !empty($vehicleErrors["fuel_type"])
-              ): ?><span class="field-error"><?= htmlspecialchars(
-    $vehicleErrors["fuel_type"],
-) ?></span><?php endif; ?>
-            </div>
-            <div class="form-group-dash">
-              <label>Engine CC <small style="color:#999">(bikes)</small></label>
-              <input type="number" name="engine_cc" class="dash-input" placeholder="e.g. 150" value="<?= htmlspecialchars(
-                  $_POST["engine_cc"] ?? "",
-              ) ?>"/>
-            </div>
-          </div>
-
-          <div class="form-row-dash">
-            <div class="form-group-dash">
               <label>Daily Rate (NPR) *</label>
               <input type="number" name="daily_rate" class="dash-input <?= isset(
                   $vehicleErrors["daily_rate"],
               )
                   ? "input-error"
                   : "" ?>"
-                     placeholder="e.g. 3500" step="0.01" required value="<?= htmlspecialchars(
+                     placeholder="Price" step="0.01" required value="<?= htmlspecialchars(
                          $_POST["daily_rate"] ?? "",
                      ) ?>"/>
               <?php if (
@@ -477,10 +476,24 @@ include "view/layout/header.php";
 ) ?></span><?php endif; ?>
             </div>
             <div class="form-group-dash">
-              <label>Image URL</label>
-              <input type="url" name="image_url" class="dash-input" placeholder="https://…" value="<?= htmlspecialchars(
-                  $_POST["image_url"] ?? "",
-              ) ?>"/>
+              <label>Vehicle Image <small style="color:#999">(JPG, PNG, WEBP — max 2 MB)</small></label>
+              <input type="file" name="image" id="vehicleImageInput" class="dash-input <?= isset(
+                  $vehicleErrors["image"],
+              )
+                  ? "input-error"
+                  : "" ?>"
+                     accept="image/jpeg,image/png,image/webp" />
+              <?php if (
+                  !empty($vehicleErrors["image"])
+              ): ?><span class="field-error"><?= htmlspecialchars(
+    $vehicleErrors["image"],
+) ?></span><?php endif; ?>
+              <!-- Current image preview (shown when editing) -->
+              <div id="currentImagePreview" class="d-none" style="margin-top:0.75rem">
+                <label style="font-size:0.8rem;color:#999;margin-bottom:0.25rem;display:block">Current Image:</label>
+                <img id="currentImageThumb" src="" alt="Current vehicle image"
+                     style="max-width:180px;max-height:120px;border-radius:8px;border:1px solid rgba(255,255,255,0.1);object-fit:cover" />
+              </div>
             </div>
           </div>
 
@@ -497,7 +510,7 @@ include "view/layout/header.php";
       <div class="orders-table-wrapper">
         <table class="orders-table">
           <thead>
-            <tr><th>ID</th><th>Name</th><th>Category</th><th>Transmission</th><th>Fuel</th><th>Daily (NPR)</th><th>Status</th><th>Actions</th></tr>
+            <tr><th>ID</th><th>Name</th><th>Category</th><th>Transmission</th><th>Daily (NPR)</th><th>Status</th><th>Actions</th></tr>
           </thead>
           <tbody>
             <?php foreach ($allVehicles as $v): ?>
@@ -511,7 +524,6 @@ include "view/layout/header.php";
               </td>
               <td><?= $v["Category"] ?></td>
               <td><?= $v["Transmission"] ?></td>
-              <td><?= $v["FuelType"] ?></td>
               <td><?= number_format($v["DailyRate"], 2) ?></td>
               <td>
                 <span class="status-badge <?= $v["IsAvailable"]
@@ -521,6 +533,7 @@ include "view/layout/header.php";
                 </span>
               </td>
               <td class="action-btns">
+                <button type="button" class="btn-xs btn-complete" onclick='editVehicle(<?= htmlspecialchars(json_encode($v), ENT_QUOTES, "UTF-8") ?>)'>Edit</button>
                 <form method="POST" class="d-inline-block">
                   <input type="hidden" name="action"     value="toggle_vehicle">
                   <input type="hidden" name="vehicle_id" value="<?= $v[
@@ -555,7 +568,7 @@ include "view/layout/header.php";
       <div class="orders-table-wrapper">
         <table class="orders-table" id="usersTable">
           <thead>
-            <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Joined</th></tr>
+            <tr><th>#</th><th>Name</th><th>Email</th><th>Phone</th><th>Role</th><th>Joined</th><th>Actions</th></tr>
           </thead>
           <tbody>
             <?php foreach ($allUsers as $u): ?>
@@ -564,10 +577,15 @@ include "view/layout/header.php";
               <td><?= htmlspecialchars($u["FullName"]) ?></td>
               <td><?= htmlspecialchars($u["Email"]) ?></td>
               <td><?= htmlspecialchars($u["PhoneNumber"]) ?></td>
-              <td><span class="role-badge <?= $u["Role"] ?>"><?= ucfirst(
-    $u["Role"],
-) ?></span></td>
+              <td><span class="role-badge <?= $u["Role"] ?>"><?= ucfirst($u["Role"]) ?></span></td>
               <td><?= date("M j, Y", strtotime($u["DateJoined"])) ?></td>
+              <td class="action-btns">
+                <form method="POST" class="d-inline-block confirm-delete">
+                  <input type="hidden" name="action" value="delete_user">
+                  <input type="hidden" name="user_id" value="<?= $u["UserID"] ?>">
+                  <button type="submit" class="btn-xs btn-reject" <?= $u["UserID"] == 1 ? "disabled title='Cannot delete admin'" : "" ?>>Delete</button>
+                </form>
+              </td>
             </tr>
             <?php endforeach; ?>
           </tbody>
@@ -578,20 +596,22 @@ include "view/layout/header.php";
       <div class="orders-table-wrapper">
         <table class="orders-table">
           <thead>
-            <tr><th>Date</th><th>From</th><th>Email</th><th>Message</th></tr>
+            <tr><th>Date</th><th>From</th><th>Email</th><th>Message</th><th>Actions</th></tr>
           </thead>
           <tbody>
             <?php foreach ($allMsgs as $m): ?>
             <tr>
-              <td style="white-space:nowrap"><?= date(
-                  "M j, Y g:i A",
-                  strtotime($m["SentDate"]),
-              ) ?></td>
+              <td style="white-space:nowrap"><?= date("M j, Y g:i A", strtotime($m["SentDate"])) ?></td>
               <td><strong><?= htmlspecialchars($m["UserName"]) ?></strong></td>
               <td><?= htmlspecialchars($m["UserEmail"]) ?></td>
-              <td><div style="max-width:400px"><?= nl2br(
-                  htmlspecialchars($m["Message"]),
-              ) ?></div></td>
+              <td><div style="max-width:400px"><?= nl2br(htmlspecialchars($m["Message"])) ?></div></td>
+              <td class="action-btns">
+                <form method="POST" class="d-inline-block confirm-delete">
+                  <input type="hidden" name="action" value="delete_message">
+                  <input type="hidden" name="message_id" value="<?= $m["MessageID"] ?>">
+                  <button type="submit" class="btn-xs btn-reject">Delete</button>
+                </form>
+              </td>
             </tr>
             <?php endforeach; ?>
             <?php if (empty($allMsgs)): ?>

@@ -24,8 +24,6 @@ CREATE TABLE IF NOT EXISTS `Vehicles` (
     `Category`     VARCHAR(50)    NOT NULL,
     `Type`         VARCHAR(50),
     `Transmission` VARCHAR(20)    NOT NULL,
-    `FuelType`     VARCHAR(20)    NOT NULL,
-    `EngineCC`     INT,
     `DailyRate`    DECIMAL(10,2)  NOT NULL,
     `ImageURL`     VARCHAR(255),
     `IsAvailable`  TINYINT(1) DEFAULT 1

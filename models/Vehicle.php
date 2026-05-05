@@ -77,11 +77,6 @@ class Vehicle
             $params[] = $filters["transmission"];
         }
 
-        if (!empty($filters["fuel_type"])) {
-            $sql .= " AND FuelType = ?";
-            $params[] = $filters["fuel_type"];
-        }
-
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();
@@ -93,16 +88,14 @@ class Vehicle
     public function create(array $data): bool
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO Vehicles (Name, Category, Type, Transmission, FuelType, EngineCC, DailyRate, ImageURL, IsAvailable)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO Vehicles (Name, Category, Type, Transmission, DailyRate, ImageURL, IsAvailable)
+             VALUES (?, ?, ?, ?, ?, ?, ?)",
         );
         return $stmt->execute([
             $data["name"],
             $data["category"],
             $data["type"] ?? null,
             $data["transmission"],
-            $data["fuel_type"],
-            !empty($data["engine_cc"]) ? (int) $data["engine_cc"] : null,
             (float) $data["daily_rate"],
             !empty($data["image_url"]) ? $data["image_url"] : null,
             $data["is_available"] ?? 1,
@@ -115,7 +108,7 @@ class Vehicle
     public function update(int $id, array $data): bool
     {
         $stmt = $this->db->prepare(
-            "UPDATE Vehicles SET Name=?, Category=?, Type=?, Transmission=?, FuelType=?, EngineCC=?, DailyRate=?, ImageURL=?
+            "UPDATE Vehicles SET Name=?, Category=?, Type=?, Transmission=?, DailyRate=?, ImageURL=?
              WHERE VehicleID=?",
         );
         return $stmt->execute([
@@ -123,8 +116,6 @@ class Vehicle
             $data["category"],
             $data["type"] ?? null,
             $data["transmission"],
-            $data["fuel_type"],
-            !empty($data["engine_cc"]) ? (int) $data["engine_cc"] : null,
             (float) $data["daily_rate"],
             !empty($data["image_url"]) ? $data["image_url"] : null,
             $id,
