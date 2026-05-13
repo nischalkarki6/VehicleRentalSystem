@@ -1,4 +1,3 @@
-/* ── Hero Section ────────────────────────────────────────────────────────── */
 .hero {
   position: relative;
   padding-top: 220px;
@@ -56,8 +55,6 @@
   width: 45%;
   position: relative;
 }
-
-/* ── Booking Container ───────────────────────────────────────────────────── */
 .booking-container {
   margin-top: -110px;
   position: relative;
@@ -192,8 +189,6 @@
 .btn-search:active {
   transform: translateY(0);
 }
-
-/* ── Stats Section ───────────────────────────────────────────────────────── */
 .stats-section {
   margin-bottom: 8rem;
 }
@@ -239,8 +234,6 @@
     border-bottom: none;
   }
 }
-
-/* ── Legacy Section ──────────────────────────────────────────────────────── */
 .legacy-section {
   margin-bottom: 8rem;
 }
@@ -324,8 +317,6 @@
 .legacy-img-1 {
   transform: translateY(2rem);
 }
-
-/* ── How It Works ────────────────────────────────────────────────────────── */
 .how-it-works {
   margin-bottom: 8rem;
   text-align: center;
@@ -408,8 +399,6 @@
 .arrow .material-symbols-outlined {
   font-size: 2rem;
 }
-
-/* ── Urban Section ───────────────────────────────────────────────────────── */
 .urban-section {
   margin-bottom: 8rem;
 }
@@ -510,8 +499,6 @@
 .btn-light:active {
   transform: translateY(0);
 }
-
-/* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .hero-title {
     font-size: 3rem;

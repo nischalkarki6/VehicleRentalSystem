@@ -1,4 +1,3 @@
-/* ── Design Tokens ───────────────────────────────────────────────────────── */
 :root {
   --bg:            #f7f8fa;
   --surface:       #ffffff;
@@ -28,8 +27,6 @@
   --duration:      250ms;
   --duration-slow: 400ms;
 }
-
-/* ── Reset ───────────────────────────────────────────────────────────────── */
 *, *::before, *::after {
   margin: 0;
   padding: 0;
@@ -61,15 +58,11 @@ a {
 button {
   font-family: inherit;
 }
-
-/* ── Layout ──────────────────────────────────────────────────────────────── */
 .container {
   max-width: 1300px;
   margin: 0 auto;
   padding: 0 2rem;
 }
-
-/* ── Navbar ──────────────────────────────────────────────────────────────── */
 .navbar {
   position: fixed;
   top: 0;
@@ -99,33 +92,40 @@ button {
 }
 
 .logo {
-  font-size: 1.125rem;
+  font-size: 1.25rem;
   font-weight: 900;
-  letter-spacing: -0.5px;
+  letter-spacing: 1px;
   color: var(--black);
   text-decoration: none;
-  text-transform: capitalize;
+  text-transform: uppercase;
+}
+
+.nav-menu {
+  display: flex;
+  align-items: center;
+  flex: 3;
+  justify-content: space-between;
 }
 
 .nav-links {
-  flex: 2;
   display: flex;
   justify-content: center;
-  gap: 3rem;
+  gap: 2.5rem;
 }
 
 .nav-links a {
   text-decoration: none;
   color: var(--text-muted);
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-weight: 500;
   transition: color var(--duration) var(--ease);
   white-space: nowrap;
+  letter-spacing: 0.2px;
 }
 
 .nav-links a.active {
   color: var(--black);
-  font-weight: 600;
+  font-weight: 700;
   position: relative;
 }
 
@@ -145,29 +145,116 @@ button {
 }
 
 .nav-actions {
-  flex: 1;
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 2rem;
+  gap: 1.25rem;
+}
+
+.nav-hamburger {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  color: var(--black);
+  z-index: 1001;
+  transition: transform var(--duration) var(--ease);
+}
+
+.nav-hamburger:hover {
+  transform: scale(1.1);
 }
 
 .login-link {
   text-decoration: none;
   color: var(--black);
-  font-size: 0.85rem;
-  font-weight: 700;
+  font-size: 0.875rem;
+  font-weight: 600;
   transition: all var(--duration) var(--ease);
-  position: relative;
-  padding: 0.5rem 1rem;
+  padding: 0.6rem 1.25rem;
   border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 .login-link:hover {
   background-color: var(--gray-bg);
 }
 
-/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.login-link:last-child {
+  background-color: var(--black);
+  color: var(--surface);
+}
+
+.login-link:last-child:hover {
+  background-color: #2a2d33;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 992px) {
+  .navbar {
+    padding: 1rem 0;
+  }
+
+  .nav-hamburger {
+    display: block;
+    order: 3;
+  }
+
+  .nav-logo-wrap {
+    flex: 1;
+    order: 1;
+  }
+
+  .nav-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 320px;
+    height: 100vh;
+    background: var(--surface);
+    flex-direction: column;
+    justify-content: flex-start;
+    padding: 6rem 2rem 2rem;
+    gap: 3rem;
+    box-shadow: var(--shadow-lg);
+    transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    z-index: 1000;
+  }
+
+  .nav-menu.active {
+    right: 0;
+  }
+
+  .nav-links {
+    flex-direction: column;
+    gap: 1.75rem;
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .nav-links a {
+    font-size: 1.125rem;
+    width: 100%;
+  }
+
+  .nav-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+    width: 100%;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border);
+  }
+
+  .login-link {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    font-size: 1rem;
+  }
+}
 .btn-primary, .btn-dark, .btn-book, .btn-confirm-booking, .btn-confirm {
   background-color: var(--black);
   color: var(--surface);
@@ -223,8 +310,6 @@ button {
   border-color: var(--black);
   transform: translateY(-2px);
 }
-
-/* ── Vehicle Cards & Grids ────────────────────────────────────────────────── */
 .v-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
@@ -351,8 +436,6 @@ button {
   margin-top: auto;
   width: 100%;
 }
-
-/* ── Footer ──────────────────────────────────────────────────────────────── */
 footer {
   padding: 3rem 0;
   border-top: 1px solid var(--gray-light);
@@ -394,8 +477,6 @@ footer {
 .footer-links a:hover {
   color: var(--text-muted);
 }
-
-/* ── Subpage Layout ──────────────────────────────────────────────────────── */
 .page-container {
   padding: 160px 2rem 100px;
   min-height: 80vh;
@@ -421,8 +502,6 @@ footer {
   margin: 0 auto;
   line-height: 1.65;
 }
-
-/* ── Shared Text Content ─────────────────────────────────────────────────── */
 .text-page-content {
   max-width: 800px;
   margin: 0 auto;
@@ -445,8 +524,6 @@ footer {
   margin-bottom: 1.4rem;
   font-size: 0.95rem;
 }
-
-/* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .hero-grid,
   .legacy-grid,
@@ -476,8 +553,6 @@ footer {
     padding: 2.5rem;
   }
 }
-
-/* ── Utility Classes ─────────────────────────────────────────────────────── */
 .d-none            { display: none !important; }
 .d-inline-block    { display: inline-block !important; }
 .d-inline-flex     { display: inline-flex !important; }

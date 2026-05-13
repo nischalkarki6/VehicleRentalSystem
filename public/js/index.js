@@ -2,7 +2,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const tabs = document.querySelectorAll("#vehicle-tabs .tab");
   const searchBtn = document.getElementById("main-search-btn");
   const pickupInput = document.getElementById("pickup-location");
-  const dropoffInput = document.getElementById("dropoff-location");
   const dateInput = document.getElementById("pickup-date");
   const travelInput = document.getElementById("travel-location");
 
@@ -30,14 +29,13 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      const dropoff = dropoffInput.value.trim() || pickup;
       const travel = travelInput.value.trim() || pickup;
 
       const targetPage = "search.php";
       const queryParams = new URLSearchParams({
         type: selectedType,
         pickup,
-        dropoff,
+        dropoff: pickup, // dropoff same as pickup (field removed)
         date,
         travel,
       });

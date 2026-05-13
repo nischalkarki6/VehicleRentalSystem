@@ -39,7 +39,48 @@ class Vehicle
             "SELECT * FROM Vehicles WHERE Category = ? AND IsAvailable = 1",
         );
         $stmt->execute([$category]);
-        return $stmt->fetchAll();
+        $vehicles = $stmt->fetchAll();
+
+        $multiplier = $this->calculateCategoryMultiplier($category);
+
+        if ($multiplier > 1.0) {
+            foreach ($vehicles as &$v) {
+                $v['OriginalRate'] = $v['DailyRate'];
+                $v['DailyRate'] = round((float)$v['DailyRate'] * $multiplier);
+                $v['IsDynamicPrice'] = true;
+            }
+        }
+
+        return $vehicles;
+    }
+
+    /**
+     * Calculate dynamic pricing multiplier for a category
+     */
+    public function calculateCategoryMultiplier(string $category): float
+    {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total, SUM(IsAvailable) as available FROM Vehicles WHERE Category = ?");
+        $stmt->execute([$category]);
+        $row = $stmt->fetch();
+        $total = (int)$row['total'];
+        $available = (int)$row['available'];
+
+        $multiplier = 1.0;
+        if ($total > 0) {
+            $demandRatio = ($total - $available) / $total;
+            if ($demandRatio >= 0.8) {
+                $multiplier += 0.20;
+            } elseif ($demandRatio >= 0.5) {
+                $multiplier += 0.10;
+            }
+        }
+
+        $dayOfWeek = (int)date('N');
+        if ($dayOfWeek === 6 || $dayOfWeek === 7) {
+            $multiplier += 0.10;
+        }
+
+        return $multiplier;
     }
 
     /**

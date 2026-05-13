@@ -23,6 +23,9 @@ class BookingController
             return ["success" => false, "errors" => $errors];
         }
 
+        $data["pickup_loc"] = trim($data["pickup_loc"] ?? "");
+        $data["dropoff_loc"] = trim($data["dropoff_loc"] ?? "");
+
         // Fetch vehicle from DB to get real rate (prevents tampering)
         $vehicle = $this->vehicleModel->findById((int) $data["vehicle_id"]);
         if (!$vehicle) {
@@ -38,11 +41,16 @@ class BookingController
             ];
         }
 
+        // Apply dynamic pricing multiplier
+        $multiplier = $this->vehicleModel->calculateCategoryMultiplier($vehicle["Category"]);
+        $dynamicRate = round((float)$vehicle["DailyRate"] * $multiplier);
+
         // Compute cost server-side
         $start = new DateTime($data["start_date"]);
         $end = new DateTime($data["end_date"]);
         $days = max(1, (int) $end->diff($start)->days);
-        $totalCost = $days * $vehicle["DailyRate"];
+        $insuranceFee = $dynamicRate > 4500 ? 3300 : 0;
+        $totalCost = ($days * $dynamicRate) + $insuranceFee;
 
         $data["user_id"] = $userId;
         $data["total_cost"] = $totalCost;
@@ -84,10 +92,10 @@ class BookingController
 
         // Sync vehicle availability
         if ($status === "Active") {
-            // Approving → mark vehicle as unavailable
+            // Approving -> mark vehicle as unavailable
             $this->vehicleModel->setAvailability($booking["VehicleID"], false);
         } elseif ($status === "Completed" || $status === "Cancelled") {
-            // Completing or cancelling → free the vehicle
+            // Completing or cancelling -> free the vehicle
             $this->vehicleModel->setAvailability($booking["VehicleID"], true);
         }
 
@@ -117,11 +125,11 @@ class BookingController
         ) {
             $errors["end_date"] = "End date must be after start date.";
         }
-        if (empty($d["pickup_loc"])) {
+        if (empty(trim($d["pickup_loc"] ?? ""))) {
             $errors["pickup_loc"] = "Pickup location is required.";
         }
-        if (empty($d["dropoff_loc"])) {
-            $errors["dropoff_loc"] = "Dropoff location is required.";
+        if (empty(trim($d["dropoff_loc"] ?? ""))) {
+            $errors["dropoff_loc"] = "Destination is required.";
         }
         return $errors;
     }

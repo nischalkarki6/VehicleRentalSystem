@@ -1,7 +1,7 @@
-// ── admin.js ──────────────────────────────────────────────────────────────────
+// -- admin.js ------------------------------------------------------------------
 
 document.addEventListener("DOMContentLoaded", () => {
-  // ── Toggle Add/Edit Vehicle form ────────────────────────────────────────────
+  // -- Toggle Add/Edit Vehicle form --------------------------------------------
   const addForm = document.getElementById("addVehicleForm");
 
   window.toggleAddForm = function () {
@@ -86,7 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     addForm.style.display = "block";
   }
 
-  // ── Live image preview when a new file is selected ─────────────────────────
+  // -- Live image preview when a new file is selected -------------------------
   const imgInput = document.getElementById("vehicleImageInput");
   if (imgInput) {
     imgInput.addEventListener("change", function () {
@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ── Live table search ───────────────────────────────────────────────────────
+  // -- Live table search -------------------------------------------------------
   window.filterTable = function (tableId, query) {
     const rows = document.querySelectorAll("#" + tableId + " tbody tr");
     query = query.toLowerCase();
@@ -119,7 +119,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // ── Filter bookings by status ───────────────────────────────────────────────
+  // -- Filter bookings by status -----------------------------------------------
   window.filterByStatus = function () {
     const statusEl = document.getElementById("statusFilter");
     const searchEl = document.getElementById("bookingSearch");
@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
     bookingSearch.addEventListener("input", window.filterByStatus);
   }
 
-  // ── Confirm destructive actions ─────────────────────────────────────────────
+  // -- Confirm destructive actions ---------------------------------------------
   document.querySelectorAll(".confirm-delete").forEach((form) => {
     form.addEventListener("submit", (e) => {
       if (!confirm("Are you sure? This cannot be undone.")) e.preventDefault();

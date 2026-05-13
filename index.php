@@ -57,17 +57,7 @@ include "view/layout/header.php";
                 />
               </div>
             </div>
-            <div class="booking-item">
-              <label for="dropoff-location">Drop off location</label>
-              <div class="input-row">
-                <span class="material-symbols-outlined">near_me</span>
-                <input
-                  type="text"
-                  id="dropoff-location"
-                  placeholder="Same as pick up location..."
-                />
-              </div>
-            </div>
+
             <div class="booking-item">
               <label for="pickup-date">Pick up date</label>
               <div class="input-row">

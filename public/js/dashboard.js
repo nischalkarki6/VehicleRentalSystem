@@ -1,9 +1,9 @@
-// ── dashboard.js ─────────────────────────────────────────────────────────────
+// -- dashboard.js -------------------------------------------------------------
 
-// ── Tab switching ─────────────────────────────────────────────────────────────
+// -- Tab switching -------------------------------------------------------------
 function switchTab(event, tabId) {
   document.querySelectorAll(".tab-pane").forEach((el) => {
-    el.style.display = "none";
+    el.classList.add("d-none");
     el.classList.remove("active");
   });
   document
@@ -12,7 +12,7 @@ function switchTab(event, tabId) {
 
   const target = document.getElementById("tab-" + tabId);
   if (target) {
-    target.style.display = "block";
+    target.classList.remove("d-none");
     target.classList.add("active");
   }
   if (event && event.currentTarget) {
@@ -20,7 +20,7 @@ function switchTab(event, tabId) {
   }
 }
 
-// ── Auto-open correct tab when there are server-side errors (POST back) ───────
+// -- Auto-open correct tab when there are server-side errors (POST back) -------
 document.addEventListener("DOMContentLoaded", () => {
   // Auto-open correct tab when there are server-side errors (POST back)
   const page = document.getElementById("dashboardPage");
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
     switchTab(btn ? { currentTarget: btn } : null, errTab);
   }
 
-  // ── Password visibility toggles ─────────────────────────────────────────────
+  // -- Password visibility toggles ---------------------------------------------
   document.querySelectorAll(".pass-toggle").forEach((btn) => {
     btn.addEventListener("click", () => {
       const input = document.getElementById(btn.dataset.target);
@@ -41,7 +41,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // ── Auth page password toggle (login / signup) ──────────────────────────────
+  // -- Auth page password toggle (login / signup) ------------------------------
   const toggleBtn = document.getElementById("togglePassword");
   const passInput = document.getElementById("password");
   if (toggleBtn && passInput) {

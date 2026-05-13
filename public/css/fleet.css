@@ -1,11 +1,8 @@
-/* ── Fleet / Search Page ─────────────────────────────────────────────────── */
 .search-container {
   padding: 140px 2rem 80px;
   max-width: 1300px;
   margin: 0 auto;
 }
-
-/* ── Header ──────────────────────────────────────────────────────────────── */
 .search-header {
   display: flex;
   justify-content: space-between;
@@ -72,8 +69,6 @@
   color: var(--surface);
   border-color: var(--black);
 }
-
-/* ── Vehicle Type Toggle ─────────────────────────────────────────────────── */
 .vehicle-toggle {
   display: flex;
   background-color: var(--gray-bg);
@@ -100,16 +95,12 @@
   color: var(--black);
   box-shadow: var(--shadow-xs);
 }
-
-/* ── Layout ──────────────────────────────────────────────────────────────── */
 .search-layout {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 4rem;
   align-items: start;
 }
-
-/* ── Sidebar Filters ─────────────────────────────────────────────────────── */
 .filters-sidebar {
   position: sticky;
   top: 120px;
@@ -204,8 +195,6 @@
   border-color: var(--black);
   transform: translateY(-2px);
 }
-
-/* ── Price Slider ────────────────────────────────────────────────────────── */
 .price-slider-track {
   position: relative;
   margin: 1.25rem 0;
@@ -241,8 +230,6 @@
   color: var(--text-muted);
   margin-top: 0.75rem;
 }
-
-/* ── Load More ───────────────────────────────────────────────────────────── */
 .load-more-container {
   text-align: center;
   margin-top: 5rem;
@@ -278,8 +265,6 @@
   color: var(--text-muted);
   margin-top: 1.25rem;
 }
-
-/* ── Need Help Card ──────────────────────────────────────────────────────── */
 .need-help-card {
   background-color: var(--black);
   color: var(--surface);
@@ -302,7 +287,28 @@
   line-height: 1.6;
 }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
+.empty-results {
+  grid-column: 1 / -1;
+  padding: 4rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.v-card-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.v-card-tag--surge {
+  background: #fff0f0;
+  color: #d32f2f;
+}
+
+.btn-book {
+  text-align: center;
+}
+
 @media (max-width: 1024px) {
   .search-layout {
     grid-template-columns: 1fr;

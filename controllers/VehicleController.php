@@ -31,7 +31,7 @@ class VehicleController
     {
         $errors = $this->validateVehicle($data);
 
-        // ── Handle image upload ──────────────────────────────────────────────
+        // -- Handle image upload ----------------------------------------------
         $imagePath = null;
         if (
             isset($fileInput["tmp_name"]) &&
@@ -70,7 +70,7 @@ class VehicleController
     {
         $errors = $this->validateVehicle($data);
 
-        // ── Handle image upload on edit ──────────────────────────────────────
+        // -- Handle image upload on edit --------------------------------------
         $newImagePath = null;
         $hasNewUpload = isset($fileInput["tmp_name"]) &&
                         $fileInput["error"] !== UPLOAD_ERR_NO_FILE;
@@ -100,7 +100,7 @@ class VehicleController
             }
             $data["image_url"] = $newImagePath;
         } else {
-            // Keep the existing image — don't overwrite with null
+            // Keep the existing image - don't overwrite with null
             $existing = $this->vehicleModel->findById($id);
             $data["image_url"] = $existing["ImageURL"] ?? null;
         }

@@ -1,12 +1,74 @@
-/* ── Dashboard ───────────────────────────────────────────────────────────── */
+.verify-banner {
+  margin-bottom: 0;
+}
+
+.verify-banner-inner {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1px solid #fcd34d;
+  border-radius: var(--radius-md);
+  padding: 1.15rem 1.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  animation: bannerSlide 0.4s var(--ease-spring) both;
+}
+
+@keyframes bannerSlide {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.verify-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: #92400e;
+}
+
+.verify-banner-icon {
+  font-size: 1.4rem;
+  color: #d97706;
+  flex-shrink: 0;
+}
+
+.verify-banner-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.55rem 1.15rem;
+  background: #92400e;
+  color: #fffbeb;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition:
+    background-color var(--duration) var(--ease),
+    transform var(--duration-fast) var(--ease);
+}
+
+.verify-banner-btn:hover {
+  background: #78350f;
+  transform: translateY(-1px);
+}
+
+.verify-banner-btn .material-symbols-outlined {
+  font-size: 1rem;
+}
+
 .dashboard-container {
   display: grid;
   grid-template-columns: 280px 1fr;
   gap: 3rem;
   align-items: start;
 }
-
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .dashboard-sidebar {
   background: var(--surface);
   border-radius: var(--radius-lg);
@@ -67,8 +129,6 @@
   background: var(--gray-bg);
   color: var(--text-muted);
 }
-
-/* ── Sidebar Nav ─────────────────────────────────────────────────────────── */
 .dashboard-nav {
   display: flex;
   flex-direction: column;
@@ -103,8 +163,6 @@
   color: var(--surface);
   box-shadow: var(--shadow-sm);
 }
-
-/* ── Main Content ────────────────────────────────────────────────────────── */
 .dashboard-content {
   background: var(--surface);
   border-radius: var(--radius-lg);
@@ -123,8 +181,6 @@
   font-weight: 800;
   letter-spacing: -1px;
 }
-
-/* ── Info Grid ───────────────────────────────────────────────────────────── */
 .info-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -163,8 +219,6 @@
   color: var(--black);
   letter-spacing: -0.3px;
 }
-
-/* ── Orders Table ────────────────────────────────────────────────────────── */
 .orders-table-wrapper {
   overflow-x: auto;
   border-radius: var(--radius-md);
@@ -200,8 +254,6 @@
 .orders-table tbody tr:hover {
   background-color: #fafbfd;
 }
-
-/* ── Status Badges ───────────────────────────────────────────────────────── */
 .status-badge {
   display: inline-block;
   padding: 0.3rem 0.85rem;
@@ -217,7 +269,49 @@
 .status-completed { background: #f0fdf4; color: #166534; }
 .status-cancelled { background: #fef2f2; color: #991b1b; }
 
-/* ── Dashboard Buttons ───────────────────────────────────────────────────── */
+.action-btns {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: nowrap;
+}
+
+.btn-xs {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.8rem;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition:
+    opacity var(--duration-fast) var(--ease),
+    transform var(--duration-fast) var(--ease),
+    box-shadow var(--duration-fast) var(--ease);
+}
+
+.btn-xs:hover {
+  opacity: 0.88;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-xs:active {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.btn-approve  { background: #f0fdf4; color: #16a34a; }
+.btn-reject   { background: #fef2f2; color: #dc2626; }
+.btn-complete { background: #eff6ff; color: #1d4ed8; }
+
 .btn-dash-primary,
 .btn-dash-secondary {
   display: inline-flex;
@@ -262,8 +356,6 @@
   border-color: var(--text-muted);
   transform: translateY(-2px);
 }
-
-/* ── Form Inputs ─────────────────────────────────────────────────────────── */
 .form-row-dash {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -325,8 +417,6 @@
   cursor: pointer;
   transition: color var(--duration) var(--ease);
 }
-
-/* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .dashboard-container {
     grid-template-columns: 1fr;

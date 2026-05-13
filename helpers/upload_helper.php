@@ -1,6 +1,6 @@
 <?php
 /**
- * Upload Helper — Reusable image upload utility for Vehicle images.
+ * Upload Helper - Reusable image upload utility for Vehicle images.
  *
  * Validates MIME type using finfo (not browser-supplied type),
  * enforces a 2 MB max file size, and generates collision-free filenames.
@@ -10,7 +10,7 @@ define("UPLOAD_DIR", __DIR__ . "/../uploads/vehicles/");
 define("UPLOAD_REL_DIR", "uploads/vehicles/"); // Relative path stored in DB
 define("MAX_FILE_SIZE", 2 * 1024 * 1024); // 2 MB
 
-// Allowed MIME types → file extensions
+// Allowed MIME types -> file extensions
 define("ALLOWED_TYPES", [
     "image/jpeg" => "jpg",
     "image/png"  => "png",
@@ -25,7 +25,7 @@ define("ALLOWED_TYPES", [
  */
 function uploadVehicleImage(array $file): array
 {
-    // ── Check for upload errors ──────────────────────────────────────────────
+    // -- Check for upload errors ----------------------------------------------
     if (!isset($file["tmp_name"]) || $file["error"] !== UPLOAD_ERR_OK) {
         $msg = match ($file["error"] ?? UPLOAD_ERR_NO_FILE) {
             UPLOAD_ERR_INI_SIZE,
@@ -37,7 +37,7 @@ function uploadVehicleImage(array $file): array
         return ["success" => false, "path" => null, "error" => $msg];
     }
 
-    // ── File size check ──────────────────────────────────────────────────────
+    // -- File size check ------------------------------------------------------
     if ($file["size"] > MAX_FILE_SIZE) {
         return [
             "success" => false,
@@ -46,7 +46,7 @@ function uploadVehicleImage(array $file): array
         ];
     }
 
-    // ── MIME type validation via finfo (server-side, not browser-supplied) ───
+    // -- MIME type validation via finfo (server-side, not browser-supplied) ---
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime  = $finfo->file($file["tmp_name"]);
 
@@ -60,16 +60,16 @@ function uploadVehicleImage(array $file): array
 
     $ext = ALLOWED_TYPES[$mime];
 
-    // ── Ensure upload directory exists ────────────────────────────────────────
+    // -- Ensure upload directory exists ----------------------------------------
     if (!is_dir(UPLOAD_DIR)) {
         mkdir(UPLOAD_DIR, 0755, true);
     }
 
-    // ── Generate unique filename ─────────────────────────────────────────────
+    // -- Generate unique filename ---------------------------------------------
     $uniqueName = "vehicle_" . uniqid("", true) . "." . $ext;
     $destPath   = UPLOAD_DIR . $uniqueName;
 
-    // ── Move the uploaded file ───────────────────────────────────────────────
+    // -- Move the uploaded file -----------------------------------------------
     if (!move_uploaded_file($file["tmp_name"], $destPath)) {
         return [
             "success" => false,
@@ -103,5 +103,5 @@ function deleteVehicleImage(?string $relativePath): bool
         return unlink($fullPath);
     }
 
-    return true; // File doesn't exist — treat as success
+    return true; // File doesn't exist - treat as success
 }

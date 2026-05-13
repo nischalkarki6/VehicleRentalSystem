@@ -1,48 +1,57 @@
 document.addEventListener("DOMContentLoaded", () => {
-  const startInput = document.getElementById("start_date");
-  const endInput = document.getElementById("end_date");
-  const totalDisplay = document.getElementById("estimated-total");
-  const durationDisplay = document.getElementById("duration-display");
+  document.querySelector("[data-history-back]")?.addEventListener("click", (event) => {
+    event.preventDefault();
 
-  // Try retrieving the daily rate from the injected hidden div or form element
-  const rateElement = document.getElementById("vehicle-daily-rate");
-  if (!rateElement) return;
-
-  const dailyRate = parseFloat(rateElement.value);
-
-  function calculateTotal() {
-    const start = new Date(startInput.value);
-    const end = new Date(endInput.value);
-    if (end > start) {
-      const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
-      const total = diffDays * dailyRate;
-      if (totalDisplay) {
-        totalDisplay.textContent =
-          "NPR " +
-          total.toLocaleString(undefined, { minimumFractionDigits: 2 });
-      }
-      if (durationDisplay) {
-        durationDisplay.textContent =
-          diffDays + (diffDays === 1 ? " day" : " days");
-      }
+    if (history.length > 1) {
+      history.back();
+      return;
     }
+
+    window.location.href = event.currentTarget.href;
+  });
+
+  const startDate = document.getElementById("start_date");
+  const endDate = document.getElementById("end_date");
+  const dailyRateInput = document.getElementById("daily_rate");
+
+  if (!startDate || !endDate || !dailyRateInput) {
+    return;
   }
 
-  if (startInput && endInput) {
-    // Sync end date min when start date changes
-    startInput.addEventListener("change", () => {
-      const nextDay = new Date(startInput.value);
+  const dailyRate = parseFloat(dailyRateInput.value);
+  const insuranceFee = dailyRate > 4500 ? 3300 : 0;
+
+  function updateReceipt() {
+    const start = new Date(startDate.value);
+    const end = new Date(endDate.value);
+
+    if (end <= start) {
+      return;
+    }
+
+    const diffTime = Math.abs(end - start);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    const rentalCost = diffDays * dailyRate;
+    const totalCost = rentalCost + insuranceFee;
+
+    document.getElementById("rental-days-label").textContent =
+      `Rental (${diffDays} day${diffDays > 1 ? "s" : ""})`;
+    document.getElementById("rental-cost-val").textContent =
+      `Rs. ${rentalCost.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+    document.getElementById("total-cost-val").textContent =
+      `Rs. ${totalCost.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+  }
+
+  startDate.addEventListener("change", () => {
+    if (new Date(endDate.value) <= new Date(startDate.value)) {
+      const nextDay = new Date(startDate.value);
       nextDay.setDate(nextDay.getDate() + 1);
-      endInput.min = nextDay.toISOString().split("T")[0];
-      if (endInput.value <= startInput.value) {
-        endInput.value = nextDay.toISOString().split("T")[0];
-      }
-      calculateTotal();
-    });
+      endDate.value = nextDay.toISOString().split("T")[0];
+    }
 
-    endInput.addEventListener("change", calculateTotal);
+    updateReceipt();
+  });
 
-    // Initial calculation on load
-    calculateTotal();
-  }
+  endDate.addEventListener("change", updateReceipt);
+  updateReceipt();
 });

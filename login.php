@@ -9,28 +9,48 @@ if (isset($_SESSION["user_id"])) {
 
 $errors = [];
 $old = [];
+$redirectUrl = $_GET["redirect"] ?? ($_POST["redirect"] ?? "");
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $email = trim($_POST["email"] ?? "");
-    $password = $_POST["password"] ?? "";
-
-    $old["email"] = htmlspecialchars($email);
-
-    $auth = new AuthController($pdo);
-    $result = $auth->login($email, $password);
-
-    if ($result["success"]) {
-        setFlash("success", "Welcome back, " . $_SESSION["user_name"] . "!");
-        redirect($result["role"] === "admin" ? "admin.php" : "dashboard.php");
+    if (!verifyCsrfToken($_POST["csrf_token"] ?? "")) {
+        $errors["form"] = "Invalid request. Please try again.";
     } else {
-        $errors["form"] = $result["error"];
+        $auth = new AuthController($pdo);
+        $email = trim($_POST["email"] ?? "");
+        $password = $_POST["password"] ?? "";
+
+        $old["email"] = htmlspecialchars($email);
+
+        $result = $auth->login($email, $password);
+
+        if ($result["success"]) {
+            setFlash("success", "Welcome back, " . $_SESSION["user_name"] . "!");
+            // Honor the redirect URL if provided and safe
+            $safeRedirect = "";
+            if (!empty($redirectUrl) && strpos($redirectUrl, '/') !== 0 && strpos($redirectUrl, 'http') !== 0) {
+                $safeRedirect = $redirectUrl;
+            }
+            if ($safeRedirect) {
+                redirect($safeRedirect);
+            } else {
+                redirect($result["role"] === "admin" ? "admin.php" : "dashboard.php");
+            }
+        } else {
+            $errors["form"] = $result["error"];
+
+            // If the user is unverified, show a resend option
+            if (!empty($result["unverified"])) {
+                $errors["unverified"] = true;
+                $errors["unverified_email"] = $result["email"];
+            }
+        }
     }
 }
 
 $flash = getFlash();
 $title = "Login | DriveEase";
 $css = "login";
-$js = "login";
+$authCss = true;
 include "view/layout/auth_header.php";
 ?>
   </head>
@@ -53,6 +73,19 @@ include "view/layout/auth_header.php";
         </div>
       <?php endif; ?>
 
+      <?php if (!empty($errors["unverified"])): ?>
+        <div class="alert alert-error unverified-alert">
+          <div class="unverified-alert__title">
+            <span class="material-symbols-outlined">mail</span>
+            <span>Your email is not verified yet.</span>
+          </div>
+          <a href="verify_email.php?email=<?= urlencode($errors["unverified_email"] ?? "") ?>"
+             class="unverified-alert__link">
+            Verify with email code
+          </a>
+        </div>
+      <?php endif; ?>
+
       <?php if ($flash && $flash["type"] === "success"): ?>
         <div class="alert alert-success">
           <span class="material-symbols-outlined">check_circle</span>
@@ -61,6 +94,8 @@ include "view/layout/auth_header.php";
       <?php endif; ?>
 
       <form action="login.php" method="POST" id="loginForm" novalidate>
+        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+        <input type="hidden" name="redirect" value="<?= htmlspecialchars($redirectUrl) ?>">
         <div class="form-group">
           <label for="email">Email Address</label>
           <div class="input-wrapper">
@@ -79,17 +114,17 @@ include "view/layout/auth_header.php";
         <div class="form-group mb-0">
           <label for="password">Password</label>
           <div class="input-wrapper pos-relative">
-            <input type="password" id="password" name="password" placeholder="••••••••"
+            <input type="password" id="password" name="password" placeholder="********"
                    class="<?= isset($errors["password"])
                        ? "input-error"
                        : "" ?>"
                    required autocomplete="current-password" />
-            <span class="material-symbols-outlined" id="togglePassword"
-                  style="position:absolute;right:1rem;top:50%;transform:translateY(-50%);color:#999;font-size:1.2rem;cursor:pointer;">
+            <span class="material-symbols-outlined input-icon-right"
+                  data-password-toggle="#password">
               visibility_off
             </span>
           </div>
-          <a href="reset.php" class="forgot-pass">Forgot Password?</a>
+          <a href="forgot_password.php" class="forgot-pass">Forgot Password?</a>
         </div>
 
         <button class="auth-btn btn-primary" type="submit" id="loginBtn">

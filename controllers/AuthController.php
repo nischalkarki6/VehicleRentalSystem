@@ -12,7 +12,9 @@ class AuthController
     }
 
     /**
-     * Register a new user
+     * Register a new user.
+     * Account is NOT active until the email is verified.
+     * A verification email is sent via PHPMailer SMTP.
      */
     public function register(array $data): array
     {
@@ -22,7 +24,8 @@ class AuthController
         }
 
         // Check if email exists
-        if ($this->userModel->findByEmail($data["email"])) {
+        $existing = $this->userModel->findByEmail($data["email"]);
+        if ($existing) {
             return [
                 "success" => false,
                 "errors" => ["email" => "Email already registered."],
@@ -33,9 +36,30 @@ class AuthController
             "cost" => 12,
         ]);
 
-        if ($this->userModel->create($data)) {
-            $user = $this->userModel->findByEmail($data["email"]);
-            return ["success" => true, "user" => $user];
+        $isAdmin = ($data["role"] ?? "user") === "admin";
+        $otp = $isAdmin ? "" : (string) random_int(100000, 999999);
+        $tokenHash = $isAdmin ? "" : hash('sha256', $otp);
+
+        if ($this->userModel->create($data, $tokenHash)) {
+            $sent = true;
+            if (!$isAdmin) {
+                $emailHandler = new EmailHandler();
+                $sent = $emailHandler->sendVerificationEmail(
+                    $data["email"],
+                    $data["fullname"],
+                    $otp
+                );
+            }
+
+            if (!$sent && !$isAdmin) {
+                error_log('[AuthController] Verification OTP for ' . $data["email"] . ': ' . $otp);
+            }
+
+            return [
+                "success"    => true,
+                "email_sent" => $sent,
+                "email"      => $data["email"],
+            ];
         }
 
         return [
@@ -44,8 +68,165 @@ class AuthController
         ];
     }
 
+    // -- Email Verification ---------------------------------------------------
+
     /**
-     * Authenticate user
+     * Verify a user's email using a one-time code.
+     */
+    public function verifyEmail(string $email, string $otp): array
+    {
+        $tokenHash = hash('sha256', $otp);
+        $user = $this->userModel->findByVerificationToken($tokenHash, $email);
+
+        if (!$user) {
+            return [
+                "success" => false,
+                "error"   => "Invalid or expired verification code. Please request a new one.",
+            ];
+        }
+
+        if ($this->userModel->markVerified($user["UserID"])) {
+            return ["success" => true, "user" => $user];
+        }
+
+        return [
+            "success" => false,
+            "error"   => "Verification failed. Please try again.",
+        ];
+    }
+
+    /**
+     * Resend verification code.
+     */
+    public function resendVerification(string $email): array
+    {
+        // Always return success-like message to prevent user enumeration
+        $genericMessage = "If that email is registered and unverified, a new verification code has been sent.";
+
+        $user = $this->userModel->findByEmail($email);
+        if (!$user || ($user["Role"] ?? "") === "admin" || ($user["IsVerified"] ?? 1)) {
+            return ["success" => true, "message" => $genericMessage];
+        }
+
+        $otp = (string) random_int(100000, 999999);
+        $tokenHash = hash('sha256', $otp);
+
+        $this->userModel->updateVerificationToken($user["UserID"], $tokenHash);
+
+        $emailHandler = new EmailHandler();
+        $emailHandler->sendVerificationEmail(
+            $user["Email"],
+            $user["FullName"],
+            $otp
+        );
+
+        return ["success" => true, "message" => $genericMessage];
+    }
+
+    // -- Password Reset -------------------------------------------------------
+
+    /**
+     * Request a password reset. Sends reset email if user exists.
+     * IMPORTANT: Never reveals whether the email exists (prevents enumeration).
+     */
+    public function requestPasswordReset(string $email): array
+    {
+        $genericMessage = "If an account with that email exists, a password reset link has been sent.";
+
+        $user = $this->userModel->findByEmail($email);
+        if (!$user) {
+            // Don't reveal that the user doesn't exist
+            return ["success" => true, "message" => $genericMessage];
+        }
+
+        $rawToken  = bin2hex(random_bytes(32));
+        $tokenHash = hash('sha256', $rawToken);
+
+        $this->userModel->createPasswordReset($user["UserID"], $tokenHash);
+
+        $emailHandler = new EmailHandler();
+        $sent = $emailHandler->sendPasswordResetEmail(
+            $user["Email"],
+            $user["FullName"],
+            $rawToken
+        );
+
+        if (!$sent) {
+            $link = buildAppUrl('reset_password.php?token=' . urlencode($rawToken));
+            error_log('[AuthController] Reset link (email failed): ' . $link);
+        }
+
+        return ["success" => true, "message" => $genericMessage];
+    }
+
+    /**
+     * Validate a reset token (check if it's valid and not expired).
+     */
+    public function validateResetToken(string $rawToken): array
+    {
+        $tokenHash = hash('sha256', $rawToken);
+        $reset = $this->userModel->findPasswordReset($tokenHash);
+
+        if (!$reset) {
+            return [
+                "success" => false,
+                "error"   => "Invalid or expired reset link. Please request a new one.",
+            ];
+        }
+
+        return ["success" => true, "reset" => $reset];
+    }
+
+    /**
+     * Complete the password reset: validate token, hash new password, save.
+     */
+    public function resetPassword(string $rawToken, string $newPassword, string $confirmPassword): array
+    {
+        // Validate token
+        $validation = $this->validateResetToken($rawToken);
+        if (!$validation["success"]) {
+            return $validation;
+        }
+
+        // Validate new password
+        if (strlen($newPassword) < 8) {
+            return [
+                "success" => false,
+                "error"   => "Password must be at least 8 characters.",
+            ];
+        }
+
+        if (!preg_match("/[A-Z]/", $newPassword) || !preg_match("/[0-9]/", $newPassword)) {
+            return [
+                "success" => false,
+                "error"   => "Password must contain at least one uppercase letter and one number.",
+            ];
+        }
+
+        if ($newPassword !== $confirmPassword) {
+            return [
+                "success" => false,
+                "error"   => "Passwords do not match.",
+            ];
+        }
+
+        $reset = $validation["reset"];
+        $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT, ["cost" => 12]);
+
+        if ($this->userModel->resetPassword($reset["ResetID"], $reset["UserID"], $hashedPassword)) {
+            return ["success" => true];
+        }
+
+        return [
+            "success" => false,
+            "error"   => "Password reset failed. Please try again.",
+        ];
+    }
+
+    // -- Login ----------------------------------------------------------------
+
+    /**
+     * Validate credentials and start an authenticated session.
      */
     public function login(string $email, string $password): array
     {
@@ -54,18 +235,27 @@ class AuthController
         if (!$user) {
             return [
                 "success" => false,
-                "error" => "No account found with this email. Please sign up.",
+                "error" => "Invalid email or password.",
             ];
         }
 
         if (!password_verify($password, $user["Password"])) {
             return [
                 "success" => false,
-                "error" => "Incorrect password. Please try again.",
+                "error" => "Invalid email or password.",
             ];
         }
 
-        // Setup session
+        // Check if email is verified
+        if (($user["Role"] ?? "") !== "admin" && isset($user["IsVerified"]) && !$user["IsVerified"]) {
+            return [
+                "success"    => false,
+                "error"      => "Please verify your email before logging in.",
+                "unverified" => true,
+                "email"      => $user["Email"],
+            ];
+        }
+
         session_regenerate_id(true);
         $_SESSION["user_id"] = $user["UserID"];
         $_SESSION["user_name"] = $user["FullName"];
@@ -73,6 +263,10 @@ class AuthController
 
         return ["success" => true, "role" => $user["Role"]];
     }
+
+    // -------------------------------------------------------------------------
+    // Profile Management
+    // -------------------------------------------------------------------------
 
     /**
      * Update user profile

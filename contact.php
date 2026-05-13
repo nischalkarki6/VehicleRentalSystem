@@ -3,28 +3,42 @@ require_once "config/config.php";
 
 $success = false;
 $error = "";
-$name = "";
-$email = "";
+
+// Pre-fill for logged-in users
+if (isset($_SESSION["user_id"])) {
+    $stmt = $pdo->prepare("SELECT FullName, Email FROM Users WHERE UserID = ?");
+    $stmt->execute([$_SESSION["user_id"]]);
+    $currentUser = $stmt->fetch();
+    $name = $currentUser["FullName"] ?? "";
+    $email = $currentUser["Email"] ?? "";
+} else {
+    $name = "";
+    $email = "";
+}
 $message = "";
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $name = trim($_POST["name"] ?? "");
-    $email = trim($_POST["email"] ?? "");
-    $message = trim($_POST["message"] ?? "");
-
-    if (empty($name) || empty($email) || empty($message)) {
-        $error = "Please fill in all fields.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Invalid email address.";
+    if (!verifyCsrfToken($_POST["csrf_token"] ?? "")) {
+        $error = "Invalid request. Please try again.";
     } else {
-        $stmt = $pdo->prepare(
-            "INSERT INTO ContactMessages (UserName, UserEmail, Message) VALUES (?, ?, ?)",
-        );
-        if ($stmt->execute([$name, $email, $message])) {
-            $success = true;
-            $name = $email = $message = "";
+        $name = trim($_POST["name"] ?? "");
+        $email = trim($_POST["email"] ?? "");
+        $message = trim($_POST["message"] ?? "");
+
+        if (empty($name) || empty($email) || empty($message)) {
+            $error = "Please fill in all fields.";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error = "Invalid email address.";
         } else {
-            $error = "Failed to send message. Please try again.";
+            $stmt = $pdo->prepare(
+                "INSERT INTO ContactMessages (UserName, UserEmail, Message) VALUES (?, ?, ?)",
+            );
+            if ($stmt->execute([$name, $email, $message])) {
+                $success = true;
+                $name = $email = $message = "";
+            } else {
+                $error = "Failed to send message. Please try again.";
+            }
         }
     }
 }
@@ -58,6 +72,7 @@ include "view/layout/header.php";
     <?php endif; ?>
 
     <form action="contact.php" method="POST">
+      <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
       <div class="form-group">
         <label>Your Name</label>
         <div class="input-wrapper">

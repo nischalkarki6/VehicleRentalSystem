@@ -8,8 +8,12 @@ requireAdmin(); // Redirects non-admins to dashboard.php
 $bookCtrl = new BookingController($pdo);
 $vehCtrl = new VehicleController($pdo);
 
-// ── Handle POST actions ───────────────────────────────────────────────────────
+// -- Handle POST actions -------------------------------------------------------
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!verifyCsrfToken($_POST["csrf_token"] ?? "")) {
+        setFlash("error", "Invalid request. Please try again.");
+        redirect("admin.php");
+    }
     $action = $_POST["action"] ?? "";
 
     // Approve / Reject / Complete / Cancel booking
@@ -93,7 +97,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     }
 }
 
-// ── Fetch data ────────────────────────────────────────────────────────────────
+// -- Fetch data ----------------------------------------------------------------
 $allBookings = $bookCtrl->getAllBookings();
 $allVehicles = $vehCtrl->getAllVehicles();
 
@@ -105,7 +109,7 @@ $allUsers = $stmtUsers->fetchAll();
 $stmtMsgs = $pdo->query("SELECT * FROM ContactMessages ORDER BY SentDate DESC");
 $allMsgs = $stmtMsgs->fetchAll();
 
-// ── Stats ─────────────────────────────────────────────────────────────────────
+// -- Stats ---------------------------------------------------------------------
 $totalRevenue = array_sum(
     array_column(
         array_filter(
@@ -136,7 +140,7 @@ include "view/layout/header.php";
 <div class="page-container">
 <main class="admin-wrap container">
 
-  <!-- ── Admin Sidebar ─────────────────────────────────────────────────────── -->
+  <!-- -- Admin Sidebar ------------------------------------------------------- -->
   <div class="admin-sidebar">
     <div class="admin-brand">
       <span class="material-symbols-outlined font-icon-xl">admin_panel_settings</span>
@@ -180,13 +184,13 @@ include "view/layout/header.php";
         <span class="material-symbols-outlined">mail</span> Messages
       </a>
       <hr class="admin-divider">
-      <a href="logout.php" class="admin-nav-item admin-logout">
+      <a href="logout.php" class="admin-nav-item admin-logout" data-confirm-logout>
         <span class="material-symbols-outlined">logout</span> Logout
       </a>
     </nav>
   </div>
 
-  <!-- ── Admin Content ─────────────────────────────────────────────────────── -->
+  <!-- -- Admin Content ------------------------------------------------------- -->
   <div class="admin-content">
 
     <?php if ($flash): ?>
@@ -200,7 +204,7 @@ include "view/layout/header.php";
       </div>
     <?php endif; ?>
 
-    <!-- ── OVERVIEW TAB ───────────────────────────────────────────────────── -->
+    <!-- -- OVERVIEW TAB ----------------------------------------------------- -->
     <?php if ($activeTab === "overview"): ?>
       <h2 class="admin-page-title">Dashboard Overview</h2>
 
@@ -260,6 +264,7 @@ include "view/layout/header.php";
               <td>
                 <?php if ($b["Status"] === "Pending"): ?>
                   <form method="POST" class="d-inline-block">
+                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                     <input type="hidden" name="action"    value="update_booking_status">
                     <input type="hidden" name="rental_id" value="<?= $b["RentalID"] ?>">
                     <input type="hidden" name="status"    value="Active">
@@ -267,6 +272,7 @@ include "view/layout/header.php";
                     <button type="submit" class="btn-xs btn-approve">Approve</button>
                   </form>
                   <form method="POST" class="d-inline-block">
+                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                     <input type="hidden" name="action"    value="update_booking_status">
                     <input type="hidden" name="rental_id" value="<?= $b["RentalID"] ?>">
                     <input type="hidden" name="status"    value="Cancelled">
@@ -274,7 +280,7 @@ include "view/layout/header.php";
                     <button type="submit" class="btn-xs btn-reject">Reject</button>
                   </form>
                 <?php else: ?>
-                  <span class="text-muted-alt font-sm">—</span>
+                  <span class="text-muted-alt font-sm">-</span>
                 <?php endif; ?>
               </td>
             </tr>
@@ -286,13 +292,13 @@ include "view/layout/header.php";
         </table>
       </div>
 
-    <!-- ── BOOKINGS TAB ────────────────────────────────────────────────────── -->
+    <!-- -- BOOKINGS TAB ------------------------------------------------------ -->
     <?php elseif ($activeTab === "bookings"): ?>
       <h2 class="admin-page-title">All Bookings</h2>
 
       <div class="filter-bar">
         <input type="text" id="bookingSearch" class="dash-input w-max-300"
-               placeholder="Search user, vehicle…" />
+               placeholder="Search user, vehicle..." />
         <select id="statusFilter" class="dash-input w-max-160"
                 onchange="filterByStatus()">
           <option value="">All Statuses</option>
@@ -306,7 +312,7 @@ include "view/layout/header.php";
           <thead>
             <tr>
               <th>#</th><th>User</th><th>Vehicle</th>
-              <th>Duration</th><th>Pickup → Dropoff</th>
+              <th>Duration</th><th>Pickup -> Destination</th>
               <th>Amount (NPR)</th><th>Status</th><th>Actions</th>
             </tr>
           </thead>
@@ -326,13 +332,13 @@ include "view/layout/header.php";
               </td>
               <td>
                 <?= date("M j, Y", strtotime($b["StartDate"])) ?><br>
-                <small>→ <?= $b["EndDate"]
+                <small>-> <?= $b["EndDate"]
                     ? date("M j, Y", strtotime($b["EndDate"]))
                     : "TBD" ?></small>
               </td>
               <td>
                 <small><?= htmlspecialchars($b["PickupLoc"]) ?></small><br>
-                <small style="color:#888"><?= htmlspecialchars(
+                <small style="color:#888">-> <?= htmlspecialchars(
                     $b["DropoffLoc"],
                 ) ?></small>
               </td>
@@ -343,6 +349,7 @@ include "view/layout/header.php";
               <td class="action-btns">
                 <?php if ($b["Status"] === "Pending"): ?>
                   <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                     <input type="hidden" name="action"    value="update_booking_status">
                     <input type="hidden" name="rental_id" value="<?= $b[
                         "RentalID"
@@ -368,7 +375,7 @@ include "view/layout/header.php";
                     <button type="submit" class="btn-xs btn-complete">Complete</button>
                   </form>
                 <?php else: ?>
-                  <span style="color:#aaa;font-size:0.8rem">—</span>
+                  <span style="color:#aaa;font-size:0.8rem">-</span>
                 <?php endif; ?>
               </td>
             </tr>
@@ -377,7 +384,7 @@ include "view/layout/header.php";
         </table>
       </div>
 
-    <!-- ── FLEET TAB ───────────────────────────────────────────────────────── -->
+    <!-- -- FLEET TAB --------------------------------------------------------- -->
     <?php elseif ($activeTab === "fleet"): ?>
       <div class="d-flex justify-content-between align-items-center mb-15">
         <h2 class="admin-page-title m-0">Fleet Management</h2>
@@ -392,6 +399,7 @@ include "view/layout/header.php";
           : "0" ?>" class="d-none bg-light p-2 mb-2 rounded-12 border-light">
         <h3 class="m-0 mb-15">Add New Vehicle</h3>
         <form method="POST" id="vehicleForm" enctype="multipart/form-data" novalidate>
+          <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
           <input type="hidden" name="action" value="add_vehicle">
 
           <div class="form-row-dash">
@@ -414,7 +422,7 @@ include "view/layout/header.php";
             <div class="form-group-dash">
               <label>Category *</label>
               <select name="category" class="dash-input" required>
-                <option value="">Select…</option>
+                <option value="">Select...</option>
                 <option value="Car"  <?= ($_POST["category"] ?? "") === "Car"
                     ? "selected"
                     : "" ?>>Car</option>
@@ -432,7 +440,7 @@ include "view/layout/header.php";
 
           <div class="form-row-dash">
             <div class="form-group-dash">
-              <label>Type <small style="color:#999">(SUV, Sedan, Cruiser…)</small></label>
+              <label>Type <small style="color:#999">(SUV, Sedan, Cruiser...)</small></label>
               <input type="text" name="type" class="dash-input" placeholder="Type" value="<?= htmlspecialchars(
                   $_POST["type"] ?? "",
               ) ?>"/>
@@ -440,7 +448,7 @@ include "view/layout/header.php";
             <div class="form-group-dash">
               <label>Transmission *</label>
               <select name="transmission" class="dash-input" required>
-                <option value="">Select…</option>
+                <option value="">Select...</option>
                 <option value="Manual"    <?= ($_POST["transmission"] ?? "") ===
                 "Manual"
                     ? "selected"
@@ -476,7 +484,7 @@ include "view/layout/header.php";
 ) ?></span><?php endif; ?>
             </div>
             <div class="form-group-dash">
-              <label>Vehicle Image <small style="color:#999">(JPG, PNG, WEBP — max 2 MB)</small></label>
+              <label>Vehicle Image <small style="color:#999">(JPG, PNG, WEBP - max 2 MB)</small></label>
               <input type="file" name="image" id="vehicleImageInput" class="dash-input <?= isset(
                   $vehicleErrors["image"],
               )
@@ -535,6 +543,7 @@ include "view/layout/header.php";
               <td class="action-btns">
                 <button type="button" class="btn-xs btn-complete" onclick='editVehicle(<?= htmlspecialchars(json_encode($v), ENT_QUOTES, "UTF-8") ?>)'>Edit</button>
                 <form method="POST" class="d-inline-block">
+                  <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                   <input type="hidden" name="action"     value="toggle_vehicle">
                   <input type="hidden" name="vehicle_id" value="<?= $v[
                       "VehicleID"
@@ -547,6 +556,7 @@ include "view/layout/header.php";
                 </form>
                 <form method="POST" class="d-inline-block"
                       onsubmit="return confirm('Delete this vehicle? This cannot be undone.')">
+                  <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                   <input type="hidden" name="action"     value="delete_vehicle">
                   <input type="hidden" name="vehicle_id" value="<?= $v[
                       "VehicleID"
@@ -560,11 +570,11 @@ include "view/layout/header.php";
         </table>
       </div>
 
-    <!-- ── USERS TAB ───────────────────────────────────────────────────────── -->
+    <!-- -- USERS TAB --------------------------------------------------------- -->
     <?php elseif ($activeTab === "users"): ?>
       <h2 class="admin-page-title">Registered Users</h2>
       <input type="text" class="dash-input" style="max-width:300px;margin-bottom:1rem"
-             placeholder="Search users…" oninput="filterTable('usersTable',this.value)" />
+             placeholder="Search users..." oninput="filterTable('usersTable',this.value)" />
       <div class="orders-table-wrapper">
         <table class="orders-table" id="usersTable">
           <thead>
@@ -581,6 +591,7 @@ include "view/layout/header.php";
               <td><?= date("M j, Y", strtotime($u["DateJoined"])) ?></td>
               <td class="action-btns">
                 <form method="POST" class="d-inline-block confirm-delete">
+                  <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                   <input type="hidden" name="action" value="delete_user">
                   <input type="hidden" name="user_id" value="<?= $u["UserID"] ?>">
                   <button type="submit" class="btn-xs btn-reject" <?= $u["UserID"] == 1 ? "disabled title='Cannot delete admin'" : "" ?>>Delete</button>
@@ -607,6 +618,7 @@ include "view/layout/header.php";
               <td><div style="max-width:400px"><?= nl2br(htmlspecialchars($m["Message"])) ?></div></td>
               <td class="action-btns">
                 <form method="POST" class="d-inline-block confirm-delete">
+                  <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                   <input type="hidden" name="action" value="delete_message">
                   <input type="hidden" name="message_id" value="<?= $m["MessageID"] ?>">
                   <button type="submit" class="btn-xs btn-reject">Delete</button>
@@ -615,7 +627,7 @@ include "view/layout/header.php";
             </tr>
             <?php endforeach; ?>
             <?php if (empty($allMsgs)): ?>
-              <tr><td colspan="4" class="text-center p-2 text-muted-light">No messages yet.</td></tr>
+              <tr><td colspan="5" class="text-center p-2 text-muted-light">No messages yet.</td></tr>
             <?php endif; ?>
           </tbody>
         </table>

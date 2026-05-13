@@ -14,6 +14,16 @@ if ($vehicleId > 0) {
     $stmt = $pdo->prepare("SELECT * FROM Vehicles WHERE VehicleID = ?");
     $stmt->execute([$vehicleId]);
     $vehicle = $stmt->fetch();
+    
+    if ($vehicle) {
+        $vehModel = new Vehicle($pdo);
+        $multiplier = $vehModel->calculateCategoryMultiplier($vehicle['Category']);
+        if ($multiplier > 1.0) {
+            $vehicle['OriginalRate'] = $vehicle['DailyRate'];
+            $vehicle['DailyRate'] = round((float)$vehicle['DailyRate'] * $multiplier);
+            $vehicle['IsDynamicPrice'] = true;
+        }
+    }
 }
 
 if (!$vehicle) {
@@ -23,12 +33,16 @@ if (!$vehicle) {
 
 $errors = [];
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $result = $bookCtrl->create($_SESSION["user_id"], $_POST);
-    if ($result["success"]) {
-        setFlash("success", "Booking requested! Waiting for admin approval.");
-        redirect("dashboard.php");
+    if (!verifyCsrfToken($_POST["csrf_token"] ?? "")) {
+        $errors["form"] = "Invalid request. Please try again.";
     } else {
-        $errors = $result["errors"];
+        $result = $bookCtrl->create($_SESSION["user_id"], $_POST);
+        if ($result["success"]) {
+            setFlash("success", "Booking requested! Waiting for admin approval.");
+            redirect("dashboard.php");
+        } else {
+            $errors = $result["errors"];
+        }
     }
 }
 
@@ -42,16 +56,19 @@ include "view/layout/header.php";
 <main class="vd-container">
   <!-- Hero Section -->
   <div class="vd-hero">
-    <div class="vd-hero-img" style="background-image: url('<?= htmlspecialchars($vehicle['ImageURL'] ?: 'https://via.placeholder.com/1200x600?text=No+Image') ?>')"></div>
+    <div class="vd-hero-img">
+      <img src="<?= htmlspecialchars($vehicle['ImageURL'] ?: 'https://via.placeholder.com/1200x600?text=No+Image') ?>"
+           alt="<?= htmlspecialchars($vehicle["Name"]) ?>">
+    </div>
   </div>
 
   <div class="vd-content-grid container">
     <!-- Main Left Column -->
     <div class="vd-main-col">
       <div class="vd-header">
-        <div style="margin-bottom: 1.5rem;">
-          <a href="javascript:history.back()" class="text-decoration-none d-flex align-items-center gap-04" style="font-size: 0.75rem; font-weight: 700; color: var(--text-muted);">
-            <span class="material-symbols-outlined" style="font-size: 1.1rem;">arrow_back</span>
+        <div class="vd-back-wrap">
+          <a href="fleet.php" class="vd-back-link" data-history-back>
+            <span class="material-symbols-outlined">arrow_back</span>
             BACK TO RESULTS
           </a>
         </div>
@@ -102,7 +119,7 @@ include "view/layout/header.php";
       ?>
       <?php if (!empty($similar)): ?>
       <div class="vd-similar-fleet">
-        <span class="vd-eyebrow" style="text-align: center; display: block; margin-bottom: 2rem;">SIMILAR <?= strtoupper($vehicle["Category"]) ?>S</span>
+        <span class="vd-eyebrow vd-similar-title">SIMILAR <?= strtoupper($vehicle["Category"]) ?>S</span>
         <div class="similar-icons">
           <?php foreach ($similar as $sv): ?>
             <a href="bookings.php?vehicle_id=<?= $sv["VehicleID"] ?>" class="sim-icon text-decoration-none">
@@ -122,19 +139,25 @@ include "view/layout/header.php";
           <div>
             <span class="widget-eyebrow">DAILY RATE</span>
             <div class="widget-price">Rs. <span id="base-price"><?= number_format($vehicle['DailyRate'], 0) ?></span></div>
+            <?php if (!empty($vehicle['IsDynamicPrice'])): ?>
+              <div class="dynamic-price-note">Includes Surge Pricing</div>
+            <?php endif; ?>
           </div>
-          <span class="badge-high-demand">🔥 HIGH DEMAND</span>
+          <?php if (!empty($vehicle['IsDynamicPrice'])): ?>
+            <span class="badge-high-demand">DYNAMIC</span>
+          <?php endif; ?>
         </div>
         
         <?php if (!empty($errors)): ?>
           <?php foreach ($errors as $field => $msg): ?>
-            <div style="background:#fee2e2;color:#b91c1c;padding:0.75rem;border-radius:4px;font-size:0.8rem;margin-bottom:1rem;">
+            <div class="booking-error">
               <?= htmlspecialchars($msg) ?>
             </div>
           <?php endforeach; ?>
         <?php endif; ?>
 
         <form method="POST" class="widget-form" id="bookingForm">
+          <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
           <input type="hidden" name="vehicle_id" value="<?= $vehicleId ?>" />
           <input type="hidden" id="daily_rate" value="<?= $vehicle['DailyRate'] ?>" />
           
@@ -142,11 +165,16 @@ include "view/layout/header.php";
             <label>PICKUP LOCATION</label>
             <div class="input-with-icon">
               <span class="material-symbols-outlined">location_on</span>
-              <input type="text" name="pickup_loc" value="<?= htmlspecialchars($_GET['pickup'] ?? 'Tribhuvan International Airport') ?>" required>
+              <input type="text" name="pickup_loc" value="<?= htmlspecialchars($_POST['pickup_loc'] ?? $_GET['pickup'] ?? '') ?>" required>
             </div>
           </div>
-          <!-- Hidden dropoff so validation passes -->
-          <input type="hidden" name="dropoff_loc" value="<?= htmlspecialchars($_GET['dropoff'] ?? $_GET['pickup'] ?? 'Tribhuvan International Airport') ?>">
+          <div class="form-group-vd">
+            <label>DESTINATION</label>
+            <div class="input-with-icon">
+              <span class="material-symbols-outlined">flag</span>
+              <input type="text" name="dropoff_loc" value="<?= htmlspecialchars($_POST['dropoff_loc'] ?? $_GET['travel'] ?? '') ?>" required>
+            </div>
+          </div>
 
           <div class="vd-row">
             <div class="form-group-vd">
@@ -169,17 +197,20 @@ include "view/layout/header.php";
             $endDt = new DateTime($defaultEndDate);
             $diffDays = max(1, (int)$endDt->diff($startDt)->days);
             $initialRentalCost = $diffDays * $vehicle['DailyRate'];
-            $initialTotalCost = $initialRentalCost + 3300;
+            $initialInsuranceFee = $vehicle['DailyRate'] > 4500 ? 3300 : 0;
+            $initialTotalCost = $initialRentalCost + $initialInsuranceFee;
           ?>
           <div class="receipt">
             <div class="receipt-row">
               <span id="rental-days-label">Rental (<?= $diffDays ?> day<?= $diffDays > 1 ? 's' : '' ?>)</span>
               <span id="rental-cost-val">Rs. <?= number_format($initialRentalCost, 0) ?></span>
             </div>
-            <div class="receipt-row">
+            <?php if ($initialInsuranceFee > 0): ?>
+            <div class="receipt-row" id="insurance-row">
               <span>Premium Insurance</span>
-              <span>Rs. 3,300</span>
+              <span>Rs. <?= number_format($initialInsuranceFee, 0) ?></span>
             </div>
+            <?php endif; ?>
             <div class="receipt-row total">
               <span>Total</span>
               <span id="total-cost-val">Rs. <?= number_format($initialTotalCost, 0) ?></span>
@@ -193,44 +224,5 @@ include "view/layout/header.php";
     </div>
   </div>
 </main>
-
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const startDate = document.getElementById("start_date");
-  const endDate = document.getElementById("end_date");
-  const dailyRate = parseFloat(document.getElementById("daily_rate").value);
-  const insuranceFee = 3300;
-  
-  function updateReceipt() {
-    const start = new Date(startDate.value);
-    const end = new Date(endDate.value);
-    
-    if(start && end && end > start) {
-      const diffTime = Math.abs(end - start);
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      
-      const rentalCost = diffDays * dailyRate;
-      const totalCost = rentalCost + insuranceFee;
-      
-      document.getElementById("rental-days-label").textContent = `Rental (${diffDays} day${diffDays > 1 ? 's' : ''})`;
-      document.getElementById("rental-cost-val").textContent = "Rs. " + rentalCost.toLocaleString('en-US', {maximumFractionDigits:0});
-      document.getElementById("total-cost-val").textContent = "Rs. " + totalCost.toLocaleString('en-US', {maximumFractionDigits:0});
-    }
-  }
-  
-  startDate.addEventListener("change", () => {
-    // Ensure end date is after start date
-    if(new Date(endDate.value) <= new Date(startDate.value)) {
-      const nextDay = new Date(startDate.value);
-      nextDay.setDate(nextDay.getDate() + 1);
-      endDate.value = nextDay.toISOString().split('T')[0];
-    }
-    updateReceipt();
-  });
-  
-  endDate.addEventListener("change", updateReceipt);
-  updateReceipt();
-});
-</script>
 
 <?php include "view/layout/footer.php"; ?>

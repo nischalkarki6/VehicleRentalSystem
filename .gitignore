@@ -1,0 +1,30 @@
+# Environment variables (contains SMTP credentials)
+.env
+.env.*
+!.env.example
+
+# Composer dependencies
+/vendor/
+
+# User uploaded files
+/uploads/*
+!/uploads/.gitkeep
+!/uploads/vehicles/
+/uploads/vehicles/*
+!/uploads/vehicles/.gitkeep
+
+# Logs
+/logs/*.log
+*.log
+
+# Local runtime/cache files
+/tmp/
+/cache/
+*.tmp
+
+# Local verification/export artifacts
+database_migration_verification.sql
+
+# OS files
+.DS_Store
+Thumbs.db

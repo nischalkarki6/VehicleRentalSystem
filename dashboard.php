@@ -11,11 +11,15 @@ $booking = new BookingController($pdo);
 $userId = (int) $_SESSION["user_id"];
 $isAdmin = $_SESSION["role"] === "admin";
 
-// ── Handle profile update ─────────────────────────────────────────────────────
+// -- Handle profile update -----------------------------------------------------
 $profileErrors = [];
 $profileSuccess = false;
 
 if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
+    if (!verifyCsrfToken($_POST["csrf_token"] ?? "")) {
+        setFlash("error", "Invalid request. Please try again.");
+        redirect("dashboard.php");
+    }
     if ($_POST["action"] === "update_profile") {
         $result = $auth->updateProfile($userId, $_POST);
         if ($result["success"]) {
@@ -40,9 +44,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
             $profileErrors = $result["errors"];
         }
     }
+
+    // User cancel their own pending booking
+    if ($_POST["action"] === "cancel_booking") {
+        $rentalId = (int) ($_POST["rental_id"] ?? 0);
+        if ($rentalId > 0) {
+            // Only allow cancelling own pending bookings
+            $chk = $pdo->prepare(
+                "SELECT * FROM Rentals WHERE RentalID = ? AND UserID = ? AND Status = 'Pending'",
+            );
+            $chk->execute([$rentalId, $userId]);
+            if ($chk->fetch()) {
+                $booking->updateStatus($rentalId, "Cancelled");
+                setFlash("success", "Booking #$rentalId has been cancelled.");
+            } else {
+                setFlash("error", "Unable to cancel this booking.");
+            }
+        }
+        redirect("dashboard.php");
+    }
 }
 
-// ── Fetch data ────────────────────────────────────────────────────────────────
+// -- Fetch data ----------------------------------------------------------------
 $stmt = $pdo->prepare(
     "SELECT FullName, Email, PhoneNumber, Address, Role, DateJoined FROM Users WHERE UserID = ?",
 );
@@ -83,9 +106,12 @@ include "view/layout/header.php";
 <div class="page-container" id="dashboardPage" data-err-tab="<?= htmlspecialchars(
     $errTab,
 ) ?>">
+
+
+
 <main class="dashboard-container container">
 
-  <!-- ── Sidebar ────────────────────────────────────────────────────────── -->
+  <!-- -- Sidebar ---------------------------------------------------------- -->
   <div class="dashboard-sidebar">
     <div class="profile-card">
       <div class="profile-avatar">
@@ -117,13 +143,13 @@ include "view/layout/header.php";
         <span class="material-symbols-outlined">admin_panel_settings</span> Admin Panel
       </button>
       <?php endif; ?>
-      <a href="logout.php" class="nav-item text-decoration-none text-inherit">
+      <a href="logout.php" class="nav-item text-decoration-none text-inherit" data-confirm-logout>
         <span class="material-symbols-outlined">logout</span> Logout
       </a>
     </nav>
   </div>
 
-  <!-- ── Main content ───────────────────────────────────────────────────── -->
+  <!-- -- Main content ----------------------------------------------------- -->
   <div class="dashboard-content">
 
     <?php if ($flash): ?>
@@ -172,6 +198,7 @@ include "view/layout/header.php";
     <div id="tab-edit" class="tab-pane d-none">
       <h2>Edit Profile</h2>
       <form action="dashboard.php" method="POST" id="profileForm" novalidate>
+        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
         <input type="hidden" name="action" value="update_profile" />
 
         <div class="form-row-dash">
@@ -231,6 +258,7 @@ include "view/layout/header.php";
     <div id="tab-password" class="tab-pane d-none">
       <h2>Change Password</h2>
       <form action="dashboard.php" method="POST" id="passwordForm" novalidate>
+        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
         <input type="hidden" name="action" value="change_password" />
 
         <div class="form-group-dash">
@@ -313,9 +341,10 @@ include "view/layout/header.php";
                 <th>#</th>
                 <th>Vehicle</th>
                 <th>Duration</th>
-                <th>Pickup / Dropoff</th>
+                <th>Pickup -> Destination</th>
                 <th>Total (NPR)</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -339,7 +368,7 @@ include "view/layout/header.php";
                 </td>
                 <td>
                   <small><?= htmlspecialchars($r["PickupLoc"]) ?></small><br>
-                  <small class="text-muted-dark"><?= htmlspecialchars(
+                  <small class="text-muted-dark">-> <?= htmlspecialchars(
                       $r["DropoffLoc"],
                   ) ?></small>
                 </td>
@@ -353,6 +382,18 @@ include "view/layout/header.php";
                   ) ?>">
                     <?= htmlspecialchars($r["Status"]) ?>
                   </span>
+                </td>
+                <td class="action-btns">
+                  <?php if ($r["Status"] === "Pending"): ?>
+                    <form method="POST" onsubmit="return confirm('Cancel this booking?')">
+                      <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                      <input type="hidden" name="action" value="cancel_booking">
+                      <input type="hidden" name="rental_id" value="<?= $r["RentalID"] ?>">
+                      <button type="submit" class="btn-xs btn-reject">Cancel</button>
+                    </form>
+                  <?php else: ?>
+                    <span style="color:#666;font-size:0.8rem">-</span>
+                  <?php endif; ?>
                 </td>
               </tr>
               <?php endforeach; ?>

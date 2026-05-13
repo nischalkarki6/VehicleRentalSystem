@@ -44,6 +44,9 @@ include "view/layout/header.php";
               <div class="v-card-tags">
                 <span class="v-card-tag available">Available</span>
                 <span class="v-card-tag type"><?= htmlspecialchars($v["Type"] ?: $v["Category"]) ?></span>
+                <?php if (!empty($v["IsDynamicPrice"])): ?>
+                  <span class="v-card-tag" style="background: #fff0f0; color: #d32f2f;">Surge</span>
+                <?php endif; ?>
               </div>
               <div class="v-card-price">
                 Rs. <?= number_format($v["DailyRate"], 0) ?>

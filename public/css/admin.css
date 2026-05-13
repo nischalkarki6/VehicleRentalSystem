@@ -1,4 +1,3 @@
-/* ── Admin Panel ─────────────────────────────────────────────────────────── */
 @import url("dashboard.css");
 
 .admin-wrap {
@@ -9,8 +8,6 @@
   margin-bottom: 4rem;
   min-height: 80vh;
 }
-
-/* ── Sidebar ─────────────────────────────────────────────────────────────── */
 .admin-sidebar {
   background: var(--black);
   border-radius: var(--radius-lg);
@@ -94,8 +91,6 @@
   padding: 0.1rem 0.55rem;
   margin-left: auto;
 }
-
-/* ── Content Area ────────────────────────────────────────────────────────── */
 .admin-content {
   background: var(--surface);
   border-radius: var(--radius-lg);
@@ -110,8 +105,6 @@
   font-weight: 800;
   letter-spacing: -0.5px;
 }
-
-/* ── Stats Cards ─────────────────────────────────────────────────────────── */
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -156,43 +149,6 @@
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
-
-/* ── Action Buttons ──────────────────────────────────────────────────────── */
-.btn-xs {
-  padding: 0.3rem 0.7rem;
-  border: none;
-  border-radius: var(--radius-sm);
-  font-size: 0.75rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-  transition:
-    opacity var(--duration-fast) var(--ease),
-    transform var(--duration-fast) var(--ease);
-  font-family: inherit;
-}
-
-.btn-xs:hover {
-  opacity: 0.82;
-  transform: translateY(-1px);
-}
-
-.btn-xs:active {
-  transform: translateY(0);
-}
-
-.btn-approve  { background: #f0fdf4; color: #16a34a; }
-.btn-reject   { background: #fef2f2; color: #dc2626; }
-.btn-complete { background: #eff6ff; color: #1d4ed8; }
-
-.action-btns {
-  display: flex;
-  gap: 0.4rem;
-  align-items: center;
-  flex-wrap: nowrap;
-}
-
-/* ── Filter Bar ──────────────────────────────────────────────────────────── */
 .filter-bar {
   display: flex;
   gap: 0.75rem;
@@ -200,8 +156,6 @@
   flex-wrap: wrap;
   align-items: center;
 }
-
-/* ── Responsive ──────────────────────────────────────────────────────────── */
 @media (max-width: 960px) {
   .admin-wrap {
     grid-template-columns: 1fr;

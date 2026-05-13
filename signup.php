@@ -10,6 +10,9 @@ $errors = [];
 $old = [];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
+    if (!verifyCsrfToken($_POST["csrf_token"] ?? "")) {
+        $errors["form"] = "Invalid request. Please try again.";
+    } else {
     $data = [
         "fullname" => trim($_POST["fullname"] ?? ""),
         "email" => trim($_POST["email"] ?? ""),
@@ -28,25 +31,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $result = $auth->register($data);
 
     if ($result["success"]) {
-        $user = $result["user"];
-        $_SESSION["user_id"] = $user["UserID"];
-        $_SESSION["user_name"] = $user["FullName"];
-        $_SESSION["role"] = $user["Role"];
-
-        setFlash(
-            "success",
-            "Welcome, " . $_SESSION["user_name"] . "! Your account is ready.",
-        );
-        redirect("dashboard.php");
+        // Redirect to verification page instead of auto-login
+        $emailParam = urlencode($data["email"]);
+        redirect("verify_email.php?email=" . $emailParam);
     } else {
         $errors = $result["errors"];
     }
+    } // end CSRF check
 }
 
 $flash = getFlash();
 $title = "Sign Up | DriveEase";
 $css = "signup";
-$js = "signup";
+$authCss = true;
 include "view/layout/auth_header.php";
 ?>
   </head>
@@ -91,6 +88,7 @@ include "view/layout/auth_header.php";
       <?php endif; ?>
 
       <form action="signup.php" method="POST" id="signupForm" novalidate>
+        <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
 
         <div class="form-row">
           <div class="form-group">
@@ -145,7 +143,7 @@ include "view/layout/auth_header.php";
         </div>
 
         <div class="form-group">
-          <label for="address">Home Address <span style="color:#999;font-size:0.8em">(optional)</span></label>
+          <label for="address">Home Address <span class="optional-label">(optional)</span></label>
           <div class="input-wrapper">
             <input type="text" id="address" name="address"
                    placeholder="Enter address"
@@ -162,8 +160,8 @@ include "view/layout/auth_header.php";
                        ? "input-error"
                        : "" ?>"
                    required />
-            <span class="material-symbols-outlined input-icon-right" id="togglePassword"
-                  style="cursor:pointer">visibility_off</span>
+            <span class="material-symbols-outlined input-icon-right"
+                  data-password-toggle="#password">visibility_off</span>
           </div>
           <?php if (!empty($errors["password"])): ?>
             <span class="field-error"><?= htmlspecialchars(

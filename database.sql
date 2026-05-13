@@ -12,6 +12,9 @@ CREATE TABLE IF NOT EXISTS `Users` (
     `Password`    VARCHAR(255) NOT NULL,
     `Address`     TEXT,
     `Role`        ENUM('user', 'admin') DEFAULT 'user',
+    `IsVerified`             TINYINT(1)   NOT NULL DEFAULT 0,
+    `VerificationTokenHash`  VARCHAR(64)  DEFAULT NULL,
+    `VerificationExpiry`     DATETIME     DEFAULT NULL,
     `DateJoined`  DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -58,20 +61,35 @@ CREATE TABLE IF NOT EXISTS `ContactMessages` (
 );
 
 -- =============================================
--- 5. Password Resets Table
+-- 5. Password Resets Table (SHA-256 hashed tokens)
 -- =============================================
 CREATE TABLE IF NOT EXISTS `PasswordResets` (
     `ResetID`   INT AUTO_INCREMENT PRIMARY KEY,
     `UserID`    INT NOT NULL,
-    `Token`     VARCHAR(64) NOT NULL UNIQUE,
-    `ExpiresAt` DATETIME NOT NULL,
-    `Used`      TINYINT(1) DEFAULT 0,
-    FOREIGN KEY (`UserID`) REFERENCES `Users`(`UserID`) ON DELETE CASCADE
+    `TokenHash` VARCHAR(64)  NOT NULL,
+    `ExpiresAt` DATETIME     NOT NULL,
+    `Used`      TINYINT(1)   DEFAULT 0,
+    `CreatedAt` DATETIME     DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (`UserID`) REFERENCES `Users`(`UserID`) ON DELETE CASCADE,
+    INDEX `idx_token_hash` (`TokenHash`),
+    INDEX `idx_expires` (`ExpiresAt`)
 );
 
 -- =============================================
--- Default Admin Account
+-- 6. Rate Limits Table (Brute-force Protection)
+-- =============================================
+CREATE TABLE IF NOT EXISTS `RateLimits` (
+    `ID`          INT AUTO_INCREMENT PRIMARY KEY,
+    `IPAddress`   VARCHAR(45)  NOT NULL,
+    `Action`      VARCHAR(50)  NOT NULL,
+    `Attempts`    INT          NOT NULL DEFAULT 1,
+    `WindowStart` DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX `idx_ip_action` (`IPAddress`, `Action`)
+);
+
+-- =============================================
+-- Default Admin Account (pre-verified)
 -- Email: admin@admin.com | Password: Admin123
 -- =============================================
-INSERT INTO `Users` (`FullName`, `Email`, `PhoneNumber`, `Password`, `Role`)
-VALUES ('System Admin', 'admin@admin.com', '1234567890', '$2y$12$iShJy4B0QUdyjHYUDspOxeqKh2y82IuGxscKosXs4MX/0X.BDmY9q', 'admin');
+INSERT INTO `Users` (`FullName`, `Email`, `PhoneNumber`, `Password`, `Role`, `IsVerified`)
+VALUES ('System Admin', 'admin@admin.com', '1234567890', '$2y$12$iShJy4B0QUdyjHYUDspOxeqKh2y82IuGxscKosXs4MX/0X.BDmY9q', 'admin', 1);

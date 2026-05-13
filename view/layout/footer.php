@@ -2,7 +2,7 @@
       <div class="container footer-content">
         <div class="footer-left">
           <div class="footer-logo">DRIVEEASE</div>
-          <div class="copyright">© 2026 DRIVEEASE NEPAL. ALL RIGHTS RESERVED.</div>
+          <div class="copyright">(c) 2026 DRIVEEASE NEPAL. ALL RIGHTS RESERVED.</div>
         </div>
         <div class="footer-links">
           <a href="support.php">SUPPORT</a>
