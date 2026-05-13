@@ -1,5 +1,4 @@
 <?php
-// User model: CRUD, email verification, and password reset token management.
 
 class User
 {
@@ -10,9 +9,6 @@ class User
         $this->db = $db;
     }
 
-    /**
-     * Find user by ID
-     */
     public function findById(int $id): ?array
     {
         $stmt = $this->db->prepare("SELECT * FROM Users WHERE UserID = ?");
@@ -20,9 +16,6 @@ class User
         return $stmt->fetch() ?: null;
     }
 
-    /**
-     * Find user by email
-     */
     public function findByEmail(string $email): ?array
     {
         $stmt = $this->db->prepare("SELECT * FROM Users WHERE Email = ?");
@@ -30,14 +23,6 @@ class User
         return $stmt->fetch() ?: null;
     }
 
-    /**
-     * Create new user (unverified users require email confirmation)
-     * Stores a SHA-256 hash of the verification token, never the raw token.
-     *
-     * @param array  $data      Registration fields
-     * @param string $tokenHash SHA-256 hash of the raw verification token
-     * @return bool
-     */
     public function create(array $data, string $tokenHash = ''): bool
     {
         $role = $data["role"] ?? "user";
@@ -47,14 +32,14 @@ class User
 
         $stmt = $this->db->prepare(
             "INSERT INTO Users (FullName, Email, PhoneNumber, Password, Address, Role,
-                                IsVerified, VerificationTokenHash, VerificationExpiry)
+                                 IsVerified, VerificationTokenHash, VerificationExpiry)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
         );
         return $stmt->execute([
             $data["fullname"],
             strtolower(trim($data["email"])),
             $data["phone"],
-            $data["password"], // Already hashed
+            $data["password"],
             $data["address"] ?? null,
             $role,
             $isVerified,
@@ -63,9 +48,6 @@ class User
         ]);
     }
 
-    /**
-     * Find a user by their verification OTP hash (must be unexpired).
-     */
     public function findByVerificationToken(string $tokenHash, string $email = ''): ?array
     {
         $emailFilter = $email !== '' ? "AND Email = ?" : "";
@@ -84,9 +66,6 @@ class User
         return $stmt->fetch() ?: null;
     }
 
-    /**
-     * Mark a user as verified and clear the verification token.
-     */
     public function markVerified(int $userId): bool
     {
         $stmt = $this->db->prepare(
@@ -99,9 +78,6 @@ class User
         return $stmt->execute([$userId]);
     }
 
-    /**
-     * Refresh the verification token (for resend functionality).
-     */
     public function updateVerificationToken(int $userId, string $tokenHash): bool
     {
         $stmt = $this->db->prepare(
@@ -113,13 +89,10 @@ class User
         return $stmt->execute([$tokenHash, $userId]);
     }
 
-    /**
-     * Store a password-reset token hash in the PasswordResets table.
-     * Invalidates any previous unused tokens for this user.
-     */
-    public function createPasswordReset(int $userId, string $tokenHash): bool
+    public function createPasswordResetOtp(int $userId, string $otpHash, int $ttlMinutes = 10): bool
     {
-        // Invalidate old tokens
+        $ttlMinutes = max(1, min($ttlMinutes, 60));
+
         $del = $this->db->prepare(
             "DELETE FROM PasswordResets WHERE UserID = ?"
         );
@@ -127,60 +100,47 @@ class User
 
         $stmt = $this->db->prepare(
             "INSERT INTO PasswordResets (UserID, TokenHash, ExpiresAt)
-             VALUES (?, ?, DATE_ADD(NOW(), INTERVAL 60 MINUTE))"
+             VALUES (?, ?, DATE_ADD(NOW(), INTERVAL {$ttlMinutes} MINUTE))"
         );
-        return $stmt->execute([$userId, $tokenHash]);
+        return $stmt->execute([$userId, $otpHash]);
     }
 
-    /**
-     * Find a valid (unused, unexpired) password-reset record by token hash.
-     * Returns the reset row joined with user data.
-     */
-    public function findPasswordReset(string $tokenHash): ?array
-    {
-        $stmt = $this->db->prepare(
-            "SELECT pr.*, u.Email, u.FullName, u.UserID
-             FROM PasswordResets pr
-             JOIN Users u ON u.UserID = pr.UserID
-             WHERE pr.TokenHash = ?
-               AND pr.ExpiresAt > NOW()
-               AND pr.Used = 0"
-        );
-        $stmt->execute([$tokenHash]);
-        return $stmt->fetch() ?: null;
-    }
-
-    /**
-     * Consume a reset token (mark used) and update the user's password.
-     */
-    public function resetPassword(int $resetId, int $userId, string $hashedPassword): bool
+    public function consumePasswordResetOtp(string $email, string $otp): ?array
     {
         $this->db->beginTransaction();
+
         try {
-            // Update password
-            $pw = $this->db->prepare("UPDATE Users SET Password = ? WHERE UserID = ?");
-            $pw->execute([$hashedPassword, $userId]);
+            $stmt = $this->db->prepare(
+                "SELECT pr.ResetID, pr.TokenHash, pr.UserID, u.Email, u.FullName
+                 FROM PasswordResets pr
+                 JOIN Users u ON u.UserID = pr.UserID
+                 WHERE u.Email = ?
+                   AND pr.ExpiresAt > NOW()
+                   AND pr.Used = 0
+                 ORDER BY pr.CreatedAt DESC
+                 LIMIT 1
+                 FOR UPDATE"
+            );
+            $stmt->execute([strtolower(trim($email))]);
+            $reset = $stmt->fetch() ?: null;
 
-            // Delete the used token
-            $del = $this->db->prepare("DELETE FROM PasswordResets WHERE ResetID = ?");
-            $del->execute([$resetId]);
+            if (!$reset || !password_verify($otp, $reset["TokenHash"])) {
+                $this->db->rollBack();
+                return null;
+            }
 
-            // Delete any other tokens for this user
             $cleanup = $this->db->prepare("DELETE FROM PasswordResets WHERE UserID = ?");
-            $cleanup->execute([$userId]);
+            $cleanup->execute([$reset["UserID"]]);
 
             $this->db->commit();
-            return true;
+            return $reset;
         } catch (\Exception $e) {
             $this->db->rollBack();
-            error_log('[User::resetPassword] ' . $e->getMessage());
-            return false;
+            error_log('[User::consumePasswordResetOtp] ' . $e->getMessage());
+            return null;
         }
     }
 
-    /**
-     * Update user profile
-     */
     public function update(int $id, array $data): bool
     {
         $stmt = $this->db->prepare(
@@ -194,9 +154,6 @@ class User
         ]);
     }
 
-    /**
-     * Update password
-     */
     public function updatePassword(int $id, string $hashedPassword): bool
     {
         $stmt = $this->db->prepare(
@@ -205,9 +162,6 @@ class User
         return $stmt->execute([$hashedPassword, $id]);
     }
 
-    /**
-     * Get all users (admin only)
-     */
     public function getAll(): array
     {
         $stmt = $this->db->query("SELECT * FROM Users ORDER BY UserID DESC");

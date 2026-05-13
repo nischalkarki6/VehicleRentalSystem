@@ -9,6 +9,7 @@ if (isset($_SESSION["user_id"])) {
 
 $status  = "form";
 $message = "";
+$email   = "";
 $old     = [];
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
@@ -20,7 +21,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $old["email"] = htmlspecialchars($email);
 
         $auth   = new AuthController($pdo);
-        $result = $auth->requestPasswordReset($email);
+        $result = $auth->requestPasswordResetOtp($email);
 
         // Always show "sent" to prevent enumeration
         $status  = "sent";
@@ -30,6 +31,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
 $title = "Forgot Password | DriveEase";
 $css   = "forgot_password";
+$js    = "forgot_password";
 $authCss = true;
 include "view/layout/auth_header.php";
 ?>
@@ -43,21 +45,99 @@ include "view/layout/auth_header.php";
       </a>
 
       <?php if ($status === "sent"): ?>
-        <!-- -- Email Sent Confirmation ---------------------------------- -->
-        <div class="verify-icon verify-icon--info">
-          <span class="material-symbols-outlined">mark_email_read</span>
+        <section class="otp-panel" id="otpPanel">
+          <div class="verify-icon verify-icon--info">
+            <span class="material-symbols-outlined">mark_email_read</span>
+          </div>
+          <h1 class="verify-title">Enter Reset Code</h1>
+          <p class="verify-text">
+            <?= htmlspecialchars($message) ?>
+          </p>
+          <p class="verify-text forgot-note">
+            The code sent to <strong><?= htmlspecialchars($email) ?></strong> expires in 10 minutes.
+          </p>
+
+          <form id="otpVerifyForm"
+                class="otp-form"
+                data-endpoint="password_reset_otp.php"
+                data-email="<?= htmlspecialchars($email) ?>">
+            <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+
+            <label for="otpCode" class="verify-label">Verification code</label>
+            <div class="input-wrapper">
+              <input type="text" id="otpCode" name="otp"
+                     class="otp-input"
+                     inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                     placeholder="000000"
+                     required autocomplete="one-time-code" />
+            </div>
+
+            <p class="form-message" id="otpMessage" aria-live="polite"></p>
+
+            <button class="auth-btn btn-primary" type="submit" id="verifyOtpBtn">
+              <span>Verify Code</span>
+              <span class="material-symbols-outlined">verified_user</span>
+            </button>
+          </form>
+
+          <a href="forgot_password.php" class="verify-login-link">
+            <span class="material-symbols-outlined">refresh</span>
+            Request another code
+          </a>
+        </section>
+
+        <div class="reset-popup" id="resetPopup" aria-hidden="true">
+          <div class="reset-dialog" role="dialog" aria-modal="true" aria-labelledby="resetPopupTitle">
+            <div class="verify-icon verify-icon--success">
+              <span class="material-symbols-outlined">lock_reset</span>
+            </div>
+            <h2 class="verify-title" id="resetPopupTitle">Reset Password</h2>
+            <p class="verify-text">
+              Choose a new password for your DriveEase account.
+            </p>
+
+            <form id="resetPasswordOtpForm" class="reset-form">
+              <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+              <input type="hidden" name="reset_session_token" id="resetSessionToken">
+
+              <div class="form-group">
+                <label for="newPassword">New Password</label>
+                <div class="input-wrapper pos-relative">
+                  <input type="password" id="newPassword" name="password"
+                         placeholder="Min. 8 characters"
+                         required autocomplete="new-password" />
+                  <span class="material-symbols-outlined input-icon-right"
+                        data-password-toggle="#newPassword">visibility_off</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <div class="input-wrapper pos-relative">
+                  <input type="password" id="confirmPassword" name="confirm_password"
+                         placeholder="Repeat password"
+                         required autocomplete="new-password" />
+                  <span class="material-symbols-outlined input-icon-right"
+                        data-password-toggle="#confirmPassword">visibility_off</span>
+                </div>
+              </div>
+
+              <div class="password-strength" id="resetStrength">
+                <div class="strength-bar">
+                  <div class="strength-fill" id="resetStrengthFill"></div>
+                </div>
+                <span class="strength-text" id="resetStrengthText"></span>
+              </div>
+
+              <p class="form-message" id="resetMessage" aria-live="polite"></p>
+
+              <button class="auth-btn btn-primary" type="submit" id="resetPasswordOtpBtn">
+                <span>Update Password</span>
+                <span class="material-symbols-outlined">lock</span>
+              </button>
+            </form>
+          </div>
         </div>
-        <h1 class="verify-title">Check Your Inbox</h1>
-        <p class="verify-text">
-          <?= htmlspecialchars($message) ?>
-        </p>
-        <p class="verify-text forgot-note">
-          The link will expire in 60 minutes. Check your spam folder if you don't see it.
-        </p>
-        <a href="login.php" class="auth-btn btn-primary" id="backToLoginBtn">
-          <span>Back to Login</span>
-          <span class="material-symbols-outlined">arrow_back</span>
-        </a>
 
       <?php else: ?>
         <!-- -- Request Reset Form --------------------------------------- -->
@@ -67,7 +147,7 @@ include "view/layout/auth_header.php";
         <h1 class="verify-title">Forgot Password?</h1>
         <p class="verify-text">
           Enter the email address associated with your account and we'll send you
-          a link to reset your password.
+          a code to reset your password.
         </p>
 
         <?php if (!empty($message)): ?>
@@ -91,7 +171,7 @@ include "view/layout/auth_header.php";
           </div>
 
           <button class="auth-btn btn-primary" type="submit" id="resetRequestBtn">
-            <span>Send Reset Link</span>
+            <span>Send Reset Code</span>
             <span class="material-symbols-outlined">send</span>
           </button>
         </form>

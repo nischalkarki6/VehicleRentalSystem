@@ -33,7 +33,6 @@ $userMsg  = trim($input['message']);
 
 $messages = [];
 
-// System context
 $systemPrompt = "You are a helpful assistant for DriveEase, a premium vehicle rental company in Nepal. "
     . "You help customers with vehicle bookings, pricing, fleet information, travel tips in Nepal, "
     . "and general support. Be friendly, concise, and professional. "

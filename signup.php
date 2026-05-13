@@ -22,7 +22,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         "confirm_password" => $_POST["confirm_password"] ?? "",
     ];
 
-    // Keep old values for re-population (never password)
     foreach (["fullname", "email", "phone", "address"] as $k) {
         $old[$k] = htmlspecialchars($data[$k]);
     }
@@ -31,13 +30,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $result = $auth->register($data);
 
     if ($result["success"]) {
-        // Redirect to verification page instead of auto-login
         $emailParam = urlencode($data["email"]);
         redirect("verify_email.php?email=" . $emailParam);
     } else {
         $errors = $result["errors"];
     }
-    } // end CSRF check
+    }
 }
 
 $flash = getFlash();

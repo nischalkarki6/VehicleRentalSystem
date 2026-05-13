@@ -45,26 +45,6 @@ include "view/layout/header.php";
   <div class="search-layout">
     <!-- Filters Sidebar -->
     <aside class="filters-sidebar">
-      <?php if ($category === "Bike"): ?>
-
-      <?php else: ?>
-
-
-        <div class="filter-group">
-          <span class="filter-title">TRANSMISSION</span>
-          <label class="custom-checkbox">
-            <input type="checkbox" class="filter-trans" value="Automatic" checked>
-            <span class="checkmark"><span class="material-symbols-outlined">check</span></span>
-            Automatic
-          </label>
-          <label class="custom-checkbox">
-            <input type="checkbox" class="filter-trans" value="Manual" checked>
-            <span class="checkmark"><span class="material-symbols-outlined">check</span></span>
-            Manual
-          </label>
-        </div>
-      <?php endif; ?>
-
       <div class="filter-group">
         <span class="filter-title">PRICE RANGE (DAILY)</span>
         <div class="price-slider-track">
