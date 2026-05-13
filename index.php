@@ -72,7 +72,7 @@ include "view/layout/header.php";
                 <input
                   type="text"
                   id="travel-location"
-                  placeholder="Destination..."
+                  placeholder="Destination..." required
                 />
               </div>
             </div>

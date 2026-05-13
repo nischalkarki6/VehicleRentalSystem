@@ -8,5 +8,6 @@
         $js,
     ) ?>.js?v=<?= time() ?>"></script>
     <?php endif; ?>
+    <script src="public/js/chatbot.js?v=<?= time() ?>"></script>
   </body>
 </html>

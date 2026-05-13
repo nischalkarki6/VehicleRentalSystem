@@ -22,20 +22,22 @@ document.addEventListener("DOMContentLoaded", () => {
     searchBtn.addEventListener("click", () => {
       const pickup = pickupInput.value.trim();
       const date = dateInput.value;
+      const travelValue = travelInput.value.trim();
 
-      if (!pickup || !date) {
+      if (!pickup || !date || !travelValue) {
         if (!pickup) pickupInput.focus();
-        else dateInput.focus();
+        else if (!date) dateInput.focus();
+        else travelInput.focus();
         return;
       }
 
-      const travel = travelInput.value.trim() || pickup;
+      const travel = travelValue;
 
       const targetPage = "search.php";
       const queryParams = new URLSearchParams({
         type: selectedType,
         pickup,
-        dropoff: pickup, // dropoff same as pickup (field removed)
+        dropoff: pickup,
         date,
         travel,
       });

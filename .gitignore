@@ -3,6 +3,9 @@
 .env.*
 !.env.example
 
+# Database config (contains DB credentials - never commit this)
+config/config.php
+
 # Composer dependencies
 /vendor/
 

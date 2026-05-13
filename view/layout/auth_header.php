@@ -15,3 +15,4 @@
         $css,
     ) ?>.css?v=<?= time() ?>" />
     <?php endif; ?>
+    <link rel="stylesheet" href="public/css/chatbot.css?v=<?= time() ?>" />
