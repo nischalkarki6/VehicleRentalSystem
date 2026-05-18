@@ -18,8 +18,8 @@ class Booking
     public function create(array $data): string|bool
     {
         $stmt = $this->db->prepare(
-            "INSERT INTO Rentals (UserID, VehicleID, StartDate, EndDate, PickupLoc, DropoffLoc, TotalCost, Status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending')",
+            "INSERT INTO Rentals (UserID, VehicleID, StartDate, EndDate, PickupLoc, DropoffLoc, TotalCost, Status, TransactionUUID, PaymentStatus)
+             VALUES (?, ?, ?, ?, ?, ?, ?, 'Pending', ?, 'Unpaid')",
         );
         $success = $stmt->execute([
             $data["user_id"],
@@ -29,6 +29,7 @@ class Booking
             $data["pickup_loc"],
             $data["dropoff_loc"],
             $data["total_cost"],
+            $data["transaction_uuid"] ?? null,
         ]);
 
         return $success ? $this->db->lastInsertId() : false;
@@ -93,5 +94,26 @@ class Booking
     {
         $stmt = $this->db->prepare("DELETE FROM Rentals WHERE RentalID = ?");
         return $stmt->execute([$id]);
+    }
+
+    /**
+     * Find by Transaction UUID
+     */
+    public function findByTransactionUUID(string $uuid): ?array
+    {
+        $stmt = $this->db->prepare("SELECT * FROM Rentals WHERE TransactionUUID = ?");
+        $stmt->execute([$uuid]);
+        return $stmt->fetch() ?: null;
+    }
+
+    /**
+     * Update payment information
+     */
+    public function updatePaymentInfo(int $id, string $paymentStatus, ?string $refId): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE Rentals SET PaymentStatus = ?, ReferenceID = ? WHERE RentalID = ?"
+        );
+        return $stmt->execute([$paymentStatus, $refId, $id]);
     }
 }

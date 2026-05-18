@@ -73,7 +73,9 @@ $stmt->execute([$userId]);
 $user = $stmt->fetch();
 
 if (!$user) {
-    die("User not found.");
+    session_unset();
+    session_destroy();
+    redirect("login.php");
 }
 
 $rentals = $booking->getUserBookings($userId);

@@ -9,6 +9,10 @@ $bookCtrl = new BookingController($pdo);
 
 $vehicleId = (int) ($_GET["vehicle_id"] ?? 0);
 $vehicle = null;
+$prefillStartDate = $_POST["start_date"] ?? $_GET["start_date"] ?? $_GET["date"] ?? date("Y-m-d");
+$prefillEndDate = $_POST["end_date"] ?? $_GET["end_date"] ?? "";
+$prefillPickup = $_POST["pickup_loc"] ?? $_GET["pickup"] ?? "";
+$prefillDestination = $_POST["dropoff_loc"] ?? $_GET["travel"] ?? $_GET["destination"] ?? $_GET["dropoff"] ?? "";
 
 if ($vehicleId > 0) {
     $stmt = $pdo->prepare("SELECT * FROM Vehicles WHERE VehicleID = ?");
@@ -38,8 +42,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     } else {
         $result = $bookCtrl->create($_SESSION["user_id"], $_POST);
         if ($result["success"]) {
-            setFlash("success", "Booking requested! Waiting for admin approval.");
-            redirect("dashboard.php");
+            setFlash("success", "Booking requested! Redirecting to payment...");
+            redirect("esewa_pay.php");
         } else {
             $errors = $result["errors"];
         }
@@ -165,30 +169,30 @@ include "view/layout/header.php";
             <label>PICKUP LOCATION</label>
             <div class="input-with-icon">
               <span class="material-symbols-outlined">location_on</span>
-              <input type="text" name="pickup_loc" value="<?= htmlspecialchars($_POST['pickup_loc'] ?? $_GET['pickup'] ?? '') ?>" required>
+              <input type="text" name="pickup_loc" value="<?= htmlspecialchars($prefillPickup) ?>" required>
             </div>
           </div>
           <div class="form-group-vd">
             <label>DESTINATION</label>
             <div class="input-with-icon">
               <span class="material-symbols-outlined">flag</span>
-              <input type="text" name="dropoff_loc" value="<?= htmlspecialchars($_POST['dropoff_loc'] ?? $_GET['travel'] ?? '') ?>" required>
+              <input type="text" name="dropoff_loc" value="<?= htmlspecialchars($prefillDestination) ?>" required>
             </div>
           </div>
 
           <div class="vd-row">
             <div class="form-group-vd">
               <label>START DATE</label>
-              <input type="date" name="start_date" id="start_date" value="<?= htmlspecialchars($_GET['start_date'] ?? date('Y-m-d')) ?>" min="<?= date('Y-m-d') ?>" required>
+              <input type="date" name="start_date" id="start_date" value="<?= htmlspecialchars($prefillStartDate) ?>" min="<?= date('Y-m-d') ?>" required>
             </div>
             <div class="form-group-vd">
               <label>END DATE</label>
               <?php 
-                $startDateStr = $_GET['start_date'] ?? date('Y-m-d');
-                $defaultEndDate = date('Y-m-d', strtotime($startDateStr . ' + 3 days'));
+                $startDateStr = $prefillStartDate;
+                $defaultEndDate = $prefillEndDate ?: date('Y-m-d', strtotime($startDateStr . ' + 3 days'));
                 $minEndDate = date('Y-m-d', strtotime($startDateStr . ' + 1 day'));
               ?>
-              <input type="date" name="end_date" id="end_date" value="<?= $defaultEndDate ?>" min="<?= $minEndDate ?>" required>
+              <input type="date" name="end_date" id="end_date" value="<?= htmlspecialchars($defaultEndDate) ?>" min="<?= $minEndDate ?>" required>
             </div>
           </div>
 
@@ -217,12 +221,80 @@ include "view/layout/header.php";
             </div>
           </div>
 
-          <button type="submit" class="btn-confirm-booking">Confirm Booking <span class="material-symbols-outlined">arrow_forward</span></button>
+          <button type="button" class="btn-confirm-booking" id="openTncModal">Confirm Booking <span class="material-symbols-outlined">arrow_forward</span></button>
           <div class="no-credit-card">NO CREDIT CARD REQUIRED UNTIL CONFIRMATION</div>
         </form>
       </div>
     </div>
   </div>
 </main>
+
+<!-- Terms & Conditions Modal -->
+<div id="tncModal" class="tnc-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="tncModalTitle">
+  <div class="tnc-modal">
+    <div class="tnc-modal-header">
+      <div class="tnc-header-icon">
+        <span class="material-symbols-outlined">gavel</span>
+      </div>
+      <div class="tnc-header-text">
+        <h2 id="tncModalTitle">Terms &amp; Conditions</h2>
+        <p>Please read and accept our rental agreement before confirming.</p>
+      </div>
+      <button class="tnc-close-btn" id="closeTncModal" aria-label="Close">
+        <span class="material-symbols-outlined">close</span>
+      </button>
+    </div>
+
+    <div class="tnc-body">
+      <div class="tnc-scroll">
+        <h3>1. Eligibility</h3>
+        <p>All renters must be at least <strong>21 years of age</strong> and hold a valid, government-issued driver&#39;s license. International renters must present an International Driving Permit (IDP) alongside their national license.</p>
+
+        <h3>2. Vehicle Use</h3>
+        <p>Vehicles must only be operated on paved or approved roads within Nepal. Off-road use, racing, or sub-letting the vehicle to a third party is strictly prohibited and will void all insurance coverage.</p>
+
+        <h3>3. Fuel Policy</h3>
+        <p>Vehicles are provided with a full tank and must be returned with a matching fuel level. Failure to do so will incur a fuel surcharge at prevailing market rates plus a service fee.</p>
+
+        <h3>4. Return Policy</h3>
+        <p>All vehicles must be returned to the <strong>original pickup location</strong> by the agreed end date and time. Late returns are subject to a penalty of <strong>1.5&times; the daily rate</strong> per additional day.</p>
+
+        <h3>5. Cancellations &amp; Refunds</h3>
+        <p>Bookings cancelled more than <strong>48 hours</strong> before the start date are eligible for a full refund. Cancellations within 48 hours are subject to a nominal cancellation fee equal to one day&#39;s rental charge.</p>
+
+        <h3>6. Damage &amp; Liability</h3>
+        <p>The renter is responsible for any damage to the vehicle during the rental period. DriveEase&#39;s comprehensive insurance covers third-party liability, but does not cover damage caused by reckless driving, DUI, or violation of these terms.</p>
+
+        <h3>7. Insurance</h3>
+        <p>Premium insurance (Rs. 3,300) applies automatically for vehicles with a daily rate above Rs. 4,500. This covers comprehensive protection for total peace of mind during your journey.</p>
+
+        <h3>8. Privacy</h3>
+        <p>Your personal data collected during booking is used solely to manage your reservation and will never be sold or shared with third parties without your explicit consent, in accordance with applicable privacy laws.</p>
+      </div>
+
+      <div class="tnc-agreement">
+        <label class="tnc-checkbox-label" for="agreeCheckbox">
+          <span class="tnc-checkmark" id="tncCheckmark">
+            <span class="material-symbols-outlined">check</span>
+          </span>
+          <input type="checkbox" id="agreeCheckbox">
+          I have read and agree to the DriveEase <a href="terms.php" target="_blank" class="tnc-link">Terms &amp; Conditions</a>
+        </label>
+        <p id="tncError" class="tnc-error" aria-live="polite"></p>
+      </div>
+    </div>
+
+    <div class="tnc-footer">
+      <button type="button" class="tnc-btn-cancel" id="disagreeTnc">
+        <span class="material-symbols-outlined">thumb_down</span>
+        Disagree
+      </button>
+      <button type="button" class="tnc-btn-confirm" id="agreeTnc">
+        <span class="material-symbols-outlined">thumb_up</span>
+        Agree &amp; Confirm Booking
+      </button>
+    </div>
+  </div>
+</div>
 
 <?php include "view/layout/footer.php"; ?>

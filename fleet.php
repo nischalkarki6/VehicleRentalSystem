@@ -51,8 +51,8 @@ include "view/layout/header.php";
           <input type="range" id="priceRange" min="5000" max="15000" step="500" value="5000">
         </div>
         <div class="price-labels">
-          <span>NPR 5000</span>
-          <span id="priceLabelOut">NPR 15000+</span>
+          <span>Show all</span>
+          <span id="priceLabelOut">Show all</span>
         </div>
       </div>
 

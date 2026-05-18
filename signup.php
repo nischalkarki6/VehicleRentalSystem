@@ -177,6 +177,8 @@ include "view/layout/auth_header.php";
                        ? "input-error"
                        : "" ?>"
                    required />
+            <span class="material-symbols-outlined input-icon-right"
+                  data-password-toggle="#confirm_password">visibility_off</span>
           </div>
           <?php if (!empty($errors["confirm_password"])): ?>
             <span class="field-error"><?= htmlspecialchars(

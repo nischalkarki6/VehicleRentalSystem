@@ -35,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const queryParams = new URLSearchParams({
         type: selectedType,
         pickup,
-        dropoff: pickup,
+        dropoff: travel,
         date,
         travel,
       });

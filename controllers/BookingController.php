@@ -2,6 +2,7 @@
 require_once __DIR__ . "/../config/config.php";
 require_once __DIR__ . "/../models/Booking.php";
 require_once __DIR__ . "/../models/Vehicle.php";
+require_once __DIR__ . "/../helpers/EsewaHelper.php";
 
 class BookingController
 {
@@ -55,8 +56,13 @@ class BookingController
         $data["user_id"] = $userId;
         $data["total_cost"] = $totalCost;
 
+        // Generate Transaction UUID for eSewa
+        $esewa = new EsewaHelper();
+        $data["transaction_uuid"] = $esewa->generateTransactionUuid(time() . $userId);
+
         $rentalId = $this->bookingModel->create($data);
         if ($rentalId) {
+            $_SESSION['esewa_rental_id'] = $rentalId;
             return ["success" => true, "rental_id" => $rentalId];
         }
 

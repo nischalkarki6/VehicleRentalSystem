@@ -36,17 +36,21 @@ CREATE TABLE IF NOT EXISTS `Vehicles` (
 -- 3. Rentals Table (Bookings)
 -- =============================================
 CREATE TABLE IF NOT EXISTS `Rentals` (
-    `RentalID`   INT AUTO_INCREMENT PRIMARY KEY,
-    `UserID`     INT NOT NULL,
-    `VehicleID`  INT NOT NULL,
-    `StartDate`  DATE NOT NULL,
-    `EndDate`    DATE NOT NULL,
-    `PickupLoc`  VARCHAR(100) NOT NULL,
-    `DropoffLoc` VARCHAR(100) NOT NULL,
-    `TotalCost`  DECIMAL(10,2) NOT NULL,
-    `Status`     VARCHAR(20) DEFAULT 'Pending',
+    `RentalID`        INT AUTO_INCREMENT PRIMARY KEY,
+    `UserID`          INT NOT NULL,
+    `VehicleID`       INT NOT NULL,
+    `StartDate`       DATE NOT NULL,
+    `EndDate`         DATE NOT NULL,
+    `PickupLoc`       VARCHAR(100) NOT NULL,
+    `DropoffLoc`      VARCHAR(100) NOT NULL,
+    `TotalCost`       DECIMAL(10,2) NOT NULL,
+    `Status`          VARCHAR(20) DEFAULT 'Pending',
+    `TransactionUUID` VARCHAR(100) DEFAULT NULL,
+    `PaymentStatus`   ENUM('Unpaid', 'Paid', 'Failed') DEFAULT 'Unpaid',
+    `ReferenceID`     VARCHAR(100) DEFAULT NULL,
     FOREIGN KEY (`UserID`)    REFERENCES `Users`(`UserID`)       ON DELETE CASCADE,
-    FOREIGN KEY (`VehicleID`) REFERENCES `Vehicles`(`VehicleID`) ON DELETE CASCADE
+    FOREIGN KEY (`VehicleID`) REFERENCES `Vehicles`(`VehicleID`) ON DELETE CASCADE,
+    UNIQUE INDEX `idx_transaction_uuid` (`TransactionUUID`)
 );
 
 -- =============================================

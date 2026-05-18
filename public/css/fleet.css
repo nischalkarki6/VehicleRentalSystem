@@ -88,6 +88,7 @@
   transition: all var(--duration) var(--ease);
   font-family: inherit;
   text-transform: uppercase;
+  text-decoration: none;
 }
 
 .toggle-btn.active {
@@ -313,6 +314,12 @@
   .search-layout {
     grid-template-columns: 1fr;
     gap: 3rem;
+  }
+
+  .filters-sidebar {
+    position: static;
+    top: auto;
+    width: 100%;
   }
 }
 

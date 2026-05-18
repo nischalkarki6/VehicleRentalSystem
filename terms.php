@@ -2,7 +2,6 @@
 require_once "config/config.php";
 $title = "Terms | DriveEase";
 $page = "terms";
-$css = "terms";
 include "view/layout/header.php";
 ?>
 

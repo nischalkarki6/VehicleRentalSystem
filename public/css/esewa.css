@@ -1,0 +1,275 @@
+.esewa-container {
+  padding: 160px 2rem 100px;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.esewa-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 3.5rem 3rem;
+  max-width: 520px;
+  width: 100%;
+  text-align: center;
+}
+
+.esewa-icon-wrap {
+  width: 72px;
+  height: 72px;
+  border-radius: var(--radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.75rem;
+  font-size: 2rem;
+}
+
+.esewa-icon-wrap.loading {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.esewa-icon-wrap.success {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.esewa-icon-wrap.failure {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.esewa-icon-wrap .material-symbols-outlined {
+  font-size: 2.2rem;
+}
+
+.esewa-card h1 {
+  font-size: 1.65rem;
+  font-weight: 700;
+  color: var(--black);
+  letter-spacing: -0.5px;
+  margin-bottom: 0.6rem;
+}
+
+.esewa-card p {
+  font-size: 0.92rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin-bottom: 1.5rem;
+}
+
+.esewa-card p:last-child {
+  margin-bottom: 0;
+}
+
+.esewa-details {
+  background: var(--gray-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+  text-align: left;
+}
+
+.esewa-detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  font-size: 0.85rem;
+}
+
+.esewa-detail-row:not(:last-child) {
+  border-bottom: 1px solid var(--border);
+}
+
+.esewa-detail-row .label {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.esewa-detail-row .value {
+  color: var(--black);
+  font-weight: 700;
+}
+
+.esewa-detail-row.total {
+  padding-top: 0.75rem;
+  margin-top: 0.25rem;
+}
+
+.esewa-detail-row.total .label,
+.esewa-detail-row.total .value {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--black);
+}
+
+/* Loading spinner */
+.esewa-spinner {
+  display: inline-block;
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--gray-light);
+  border-top-color: #4f46e5;
+  border-radius: 50%;
+  animation: esewaSpin 0.8s linear infinite;
+  margin: 1.5rem auto 0;
+}
+
+@keyframes esewaSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* Progress bar */
+.esewa-progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--gray-bg);
+  border-radius: 99px;
+  margin: 1.75rem 0 0.5rem;
+  overflow: hidden;
+}
+
+.esewa-progress-fill {
+  width: 0%;
+  height: 100%;
+  background: linear-gradient(90deg, #4f46e5, #7c3aed);
+  border-radius: 99px;
+  animation: esewaProgress 3s ease-in-out forwards;
+}
+
+@keyframes esewaProgress {
+  0%   { width: 0%; }
+  50%  { width: 60%; }
+  100% { width: 95%; }
+}
+
+.esewa-redirect-note {
+  font-size: 0.72rem;
+  color: var(--text-subtle);
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  margin-top: 0.5rem;
+}
+
+/* Buttons */
+.esewa-btn-group {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.esewa-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.85rem 1.25rem;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--duration) var(--ease);
+}
+
+.esewa-btn-primary {
+  background: var(--black);
+  color: var(--surface);
+}
+
+.esewa-btn-primary:hover {
+  background: #2a2d33;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.esewa-btn-secondary {
+  background: var(--gray-bg);
+  color: var(--text-dark);
+  border: 1.5px solid var(--border);
+}
+
+.esewa-btn-secondary:hover {
+  border-color: var(--black);
+  transform: translateY(-1px);
+}
+
+.esewa-btn .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+/* Transaction info badge */
+.esewa-ref-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: var(--gray-bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 0.35rem 1rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  letter-spacing: 0.3px;
+  margin-top: 0.5rem;
+}
+
+.esewa-ref-badge .material-symbols-outlined {
+  font-size: 0.9rem;
+}
+
+/* eSewa brand color accent */
+.esewa-brand-accent {
+  color: #60bb46;
+  font-weight: 800;
+}
+
+/* Payment status badge in tables */
+.payment-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.payment-paid {
+  background: #dcfce7;
+  color: #15803d;
+}
+
+.payment-unpaid {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.payment-failed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+@media (max-width: 600px) {
+  .esewa-card {
+    padding: 2.5rem 1.5rem;
+  }
+  .esewa-card h1 {
+    font-size: 1.35rem;
+  }
+  .esewa-btn-group {
+    flex-direction: column;
+  }
+}

@@ -8,17 +8,23 @@ document.addEventListener("DOMContentLoaded", () => {
     const checkedTrans = Array.from(transChecks)
       .filter((checkbox) => checkbox.checked)
       .map((checkbox) => checkbox.value);
-    const maxPrice = priceRange ? parseInt(priceRange.value, 10) : 5000;
+    const minPrice = priceRange ? parseInt(priceRange.min, 10) : 5000;
+    const maxPrice = priceRange ? parseInt(priceRange.value, 10) : minPrice;
+    const showAllPrices = !priceRange || maxPrice === minPrice;
 
     if (priceLabelOut) {
-      priceLabelOut.textContent =
-        maxPrice >= 15000 ? "NPR 15000+" : `NPR ${maxPrice}`;
+      priceLabelOut.textContent = showAllPrices
+        ? "Show all"
+        : maxPrice >= 15000
+          ? "NPR 15000+"
+          : `NPR ${maxPrice}`;
     }
 
     cards.forEach((card) => {
       const matchesTransmission =
         transChecks.length === 0 || checkedTrans.includes(card.dataset.transmission);
-      const matchesPrice = parseInt(card.dataset.price, 10) <= maxPrice;
+      const matchesPrice =
+        showAllPrices || parseInt(card.dataset.price, 10) <= maxPrice;
 
       card.style.display = matchesTransmission && matchesPrice ? "flex" : "none";
     });
@@ -48,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (priceLabelOut) {
-      priceLabelOut.textContent = "NPR 5000";
+      priceLabelOut.textContent = "Show all";
     }
 
     applyFilters();
