@@ -102,11 +102,20 @@ class AuthController
         $this->userModel->updateVerificationToken($user["UserID"], $tokenHash);
 
         $emailHandler = new EmailHandler();
-        $emailHandler->sendVerificationEmail(
+        $sent = $emailHandler->sendVerificationEmail(
             $user["Email"],
             $user["FullName"],
             $otp
         );
+
+        if (!$sent) {
+            error_log('[AuthController] Verification OTP for ' . $user["Email"] . ': ' . $otp);
+
+            return [
+                "success" => false,
+                "message" => "We could not send the verification email right now. Please check the mail server settings and try again.",
+            ];
+        }
 
         return ["success" => true, "message" => $genericMessage];
     }

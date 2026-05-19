@@ -31,6 +31,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if ($result["success"]) {
         $emailParam = urlencode($data["email"]);
+        if (empty($result["email_sent"])) {
+            setFlash(
+                "error",
+                "Account created, but the verification email could not be sent. Please use Resend Code after checking the mail server settings."
+            );
+        }
         redirect("verify_email.php?email=" . $emailParam);
     } else {
         $errors = $result["errors"];
