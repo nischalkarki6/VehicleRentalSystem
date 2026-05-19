@@ -14,7 +14,7 @@
       </div>
     </footer>
 
-    <!-- ── CHATBOT WIDGET ── -->
+    <!-- Chatbot widget -->
     <!-- Floating toggle button (bottom-right) -->
     <button id="chatbot-toggle" aria-label="Open chat assistant" title="Chat with DriveEase AI">
       <!-- Chat icon -->
@@ -45,7 +45,7 @@
           <div class="cb-header-name">DriveEase Assistant</div>
           <div class="cb-header-status">
             <span class="cb-status-dot"></span>
-            Online — Powered by Groq AI
+            Online - Powered by Groq AI
           </div>
         </div>
         <button class="cb-header-close" id="cb-close" aria-label="Close chat">
@@ -61,7 +61,7 @@
       <div class="cb-messages" id="cb-messages">
         <!-- Welcome card -->
         <div class="cb-welcome" id="cb-welcome">
-          <p>👋 Hi there! I'm your <strong>DriveEase AI assistant</strong>.<br>
+          <p>Hi there! I'm your <strong>DriveEase AI assistant</strong>.<br>
           Ask me anything about vehicle rentals, pricing, or travel in Nepal!</p>
           <div class="cb-chips">
             <button class="cb-chip">View available vehicles</button>
@@ -76,7 +76,7 @@
       <div class="cb-input-wrap">
         <textarea
           id="chatbot-input"
-          placeholder="Type your message…"
+          placeholder="Type your message..."
           rows="1"
           aria-label="Chat message input"
         ></textarea>
@@ -88,6 +88,6 @@
         </button>
       </div>
     </div>
-    <!-- ── /CHATBOT WIDGET ── -->
+    <!-- /Chatbot widget -->
 
 <?php include __DIR__ . "/auth_footer.php"; ?>

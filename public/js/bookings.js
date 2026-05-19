@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateReceipt();
   }
 
-  /* ── Terms & Conditions Modal ─────────────────────────── */
+  /* Terms & Conditions Modal */
   const bookingForm   = document.getElementById("bookingForm");
   const openBtn       = document.getElementById("openTncModal");
   const overlay       = document.getElementById("tncModal");

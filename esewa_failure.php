@@ -19,7 +19,8 @@ if (!empty($encodedData)) {
                 (int)$booking['UserID'] === (int)$_SESSION['user_id'] &&
                 $booking['PaymentStatus'] === 'Unpaid'
             ) {
-                $bookingModel->updatePaymentInfo((int)$booking['RentalID'], 'Failed', null);
+                // Delete the incomplete booking so it never shows in history
+                $bookingModel->delete((int)$booking['RentalID']);
             }
         }
     }
@@ -37,14 +38,14 @@ include "view/layout/header.php";
       <span class="material-symbols-outlined">cancel</span>
     </div>
     <h1>Payment Failed</h1>
-    <p>Your payment could not be completed. This may have happened because you cancelled the transaction or there was an issue with eSewa. Your booking has been saved — you can retry payment from your dashboard.</p>
+    <p>Your payment could not be completed. Your booking has been removed - no charges were made. Please try again to make a new booking.</p>
 
     <div class="esewa-btn-group">
-      <a href="dashboard.php" class="esewa-btn esewa-btn-primary">
-        <span class="material-symbols-outlined">dashboard</span> Go to Dashboard
+      <a href="fleet.php" class="esewa-btn esewa-btn-primary">
+        <span class="material-symbols-outlined">directions_car</span> Book Again
       </a>
-      <a href="fleet.php" class="esewa-btn esewa-btn-secondary">
-        <span class="material-symbols-outlined">directions_car</span> Browse Fleet
+      <a href="dashboard.php" class="esewa-btn esewa-btn-secondary">
+        <span class="material-symbols-outlined">dashboard</span> Dashboard
       </a>
     </div>
   </div>

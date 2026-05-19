@@ -154,7 +154,7 @@
   function appendError(msg) {
     const el = document.createElement('div');
     el.className = 'cb-msg bot';
-    el.innerHTML = `<div class="cb-error">⚠ ${escapeHtml(msg)}</div>`;
+    el.innerHTML = `<div class="cb-error">Error: ${escapeHtml(msg)}</div>`;
     messages.appendChild(el);
     scrollBottom();
   }

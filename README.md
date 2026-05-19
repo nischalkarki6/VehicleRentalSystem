@@ -1,56 +1,134 @@
-# Vehicle Rental System (VRS)
+# DriveEase Vehicle Rental System
 
-## Project Overview
+DriveEase is a PHP and MySQL vehicle rental web application for browsing vehicles, booking rentals, paying through eSewa, and managing users, vehicles, bookings, and contact messages from an admin panel.
 
-The Vehicle Rental System is a PHP-based web application designed to facilitate online vehicle bookings. It features user authentication, a premium vehicle fleet browsing interface, a dynamic booking system, and a comprehensive administration panel for managing users and rentals.
+## Features
 
----
+- User signup, email verification, login, logout, and OTP-based password reset
+- Role-based access for users and administrators
+- Vehicle fleet browsing with category, type, transmission, and price filtering
+- Booking flow with server-side date validation, overlap checks, dynamic pricing, and payment session handling
+- eSewa ePay v2 integration for online payments
+- User dashboard for confirmed paid bookings
+- Admin panel for managing vehicles, users, bookings, and contact messages
+- Vehicle image upload support for admin vehicle management
+- Contact form storage
+- Floating chatbot assistant backed by the configured Groq API key
+- CSRF protection, prepared SQL statements, password hashing, and basic rate limiting
 
-## What Has Been Completed So Far
+## Tech Stack
 
-### 1. Architecture & Setup
+- PHP 8+
+- MySQL or MariaDB
+- Composer
+- PHPMailer
+- HTML, CSS, and vanilla JavaScript
+- XAMPP-compatible local setup
 
-- **MVC Architecture:** Established a clear Model-View-Controller structure (`controllers/`, `models/`, `view/`) to separate business logic, data, and presentation.
-- **Database Schema (`database.sql`):** Designed and finalized the database with tables for `Users`, `Vehicles`, `Rentals`, `ContactMessages`, and `PasswordResets`. Streamlined the `Vehicles` table by removing redundant fields (`FuelType`, `EngineCC`) to focus on premium EV and luxury models.
-- **Project Structure:** Cleaned up the root directory by moving assets (`public/css`, `public/js`) and removing redundant files (e.g., placeholder images).
+## Project Structure
 
-### 2. User Authentication & Security
+```text
+VRS-php/
+  config/          App configuration, environment loading, database connection
+  controllers/     Authentication, booking, home, and vehicle controllers
+  helpers/         Mail, upload, and eSewa helpers
+  models/          Database models
+  public/          CSS, JavaScript, and image assets
+  uploads/         Uploaded vehicle images
+  view/layout/     Shared headers and footers
+  database.sql     Database schema and default admin seed
+```
 
-- **Registration & Login:** Fully implemented secure user signup and login processes with password hashing.
-- **Session Management:** Verified robust user session handling (`session_start()`) across all application pages.
-- **Password Reset:** Implemented logic for password resets via token-based validation.
-- **Access Control:** Differentiated roles (`user` vs `admin`), restricting access to admin-specific pages.
+## Setup
 
-### 3. Frontend & UI
+1. Place the project in your XAMPP web root:
 
-- **Styling Refactoring:** Transitioned from inline CSS to external stylesheets, ensuring a cleaner codebase and consistent UI/UX.
-- **Premium Fleet Interface:** Developed a high-end, dynamic search interface for the fleet (`fleet.php`), featuring real-time price sliders and dynamic transmission filters.
-- **Single Vehicle Booking Details:** Built a state-of-the-art vehicle details page (`bookings.php`) with dynamic technical specifications, safety overviews, and an interactive pricing calculator.
-- **Admin Dashboard UI:** Built a standalone admin dashboard, isolating it from the public website navigation. Refined the admin sidebar and excluded administrators from the general registered users list view.
+```text
+C:\xampp\htdocs\VRS-php
+```
 
-### 4. Core Features
+2. Install Composer dependencies:
 
-- **Admin CRUD Operations:** Successfully completed full Create, Read, Update, and Delete capabilities for Vehicles, Users, and Bookings within the Admin Panel. Action buttons are fully wired to backend controllers.
-- **Vehicle Fleet Management:** Admins can seamlessly add, edit, and toggle vehicle availability.
-- **Booking System:** Complete frontend-to-backend flow allowing users to select dates, see an estimated total, and submit a rental request to the database.
+```bash
+composer install
+```
 
----
+3. Create the database:
 
-## What is Incomplete / Pending Tasks
+Open phpMyAdmin or MySQL CLI and import:
 
-### 1. Advanced Integrations
+```text
+database.sql
+```
 
-- **Payment Gateway Integration:** Implement a third-party service (e.g., Stripe, PayPal) to process actual booking payments securely instead of relying solely on "pay later/pending" states.
-- **Email Notifications:** Integrate a mail server/SMTP (like PHPMailer) to send real emails for Password Resets, Booking Confirmations, and Contact Form submissions.
+The schema creates a `vrs` database by default.
 
-### 2. System Enhancements
+4. Configure `.env`:
 
-- **User Profile Management:** Create a dedicated page for users to update their personal information, address, and change their password.
-- **Image Upload Handling:** Build secure file upload functionality so admins can upload actual image files for new vehicles rather than providing an image URL.
-- **Pagination & Search Filters:** Add robust pagination and filtering to the admin tables (Users, Vehicles, Bookings) to handle large datasets effectively as the platform scales.
+```env
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USERNAME=your-email@gmail.com
+SMTP_PASSWORD=your-app-password
+SMTP_FROM_EMAIL=your-email@gmail.com
+SMTP_FROM_NAME=DriveEase
 
-### 3. Security & Polish
+APP_URL=http://localhost/VRS-php
+APP_NAME=DriveEase
 
-- **Input Validation & Sanitization:** Perform a comprehensive audit to ensure all user inputs are strictly validated and sanitized to prevent SQL Injection and XSS attacks.
-- **Form Error Handling:** Improve user feedback on forms (e.g., displaying specific error messages directly beneath fields rather than generic alerts).
-- **Responsive Design Testing:** Conduct thorough testing to ensure all custom grid layouts (especially the new premium booking pages) adapt flawlessly across mobile, tablet, and desktop viewports.
+GROQ_API_KEY=your-groq-api-key
+
+ESEWA_PRODUCT_CODE=EPAYTEST
+ESEWA_SECRET_KEY=8gBm/:&EnhH.1/q
+ESEWA_PAYMENT_URL=https://rc-epay.esewa.com.np/api/epay/main/v2/form
+ESEWA_STATUS_URL=https://rc.esewa.com.np/api/epay/transaction/status/
+```
+
+For production eSewa payments, replace the sandbox values with credentials and URLs provided by eSewa.
+
+5. Start Apache and MySQL from XAMPP.
+
+6. Open the app:
+
+```text
+http://localhost/VRS-php
+```
+
+## Default Admin
+
+The database seed creates a pre-verified admin account:
+
+```text
+Email: admin@admin.com
+Password: Admin123
+```
+
+Change this password after the first login in any real deployment.
+
+## Payment Notes
+
+The app uses eSewa ePay v2. In local development, it submits payments to the eSewa UAT endpoint when sandbox credentials are used. A `502 Bad Gateway` page from `rc-epay.esewa.com.np` usually indicates an eSewa sandbox-side outage or gateway issue, not a PHP error in this project.
+
+## Useful Checks
+
+Run PHP syntax checks:
+
+```powershell
+Get-ChildItem -Recurse -Filter *.php | ForEach-Object { php -d display_errors=1 -l $_.FullName }
+```
+
+Search for unused references or non-ASCII symbols:
+
+```bash
+rg "contact\.js|search\.css|reset\.css|reset_password\.css"
+rg -n "[^\x00-\x7F]" -P .
+```
+
+## Security Notes
+
+- Do not commit real SMTP passwords, Groq keys, or production eSewa secrets.
+- Use Gmail app passwords instead of normal account passwords.
+- Keep `vendor/` generated through Composer.
+- Ensure `uploads/` only accepts expected image types.
+- Use HTTPS and secure session cookies in production.
+

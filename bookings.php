@@ -14,6 +14,20 @@ $prefillEndDate = $_POST["end_date"] ?? $_GET["end_date"] ?? "";
 $prefillPickup = $_POST["pickup_loc"] ?? $_GET["pickup"] ?? "";
 $prefillDestination = $_POST["dropoff_loc"] ?? $_GET["travel"] ?? $_GET["destination"] ?? $_GET["dropoff"] ?? "";
 
+$normalizeDate = static function (string $value): string {
+    $date = DateTimeImmutable::createFromFormat('!Y-m-d', $value);
+    $dateErrors = DateTimeImmutable::getLastErrors();
+    $hasErrors = is_array($dateErrors) &&
+        ($dateErrors["warning_count"] > 0 || $dateErrors["error_count"] > 0);
+
+    return (!$date || $hasErrors || $date->format('Y-m-d') !== $value) ? "" : $value;
+};
+$prefillStartDate = $normalizeDate((string) $prefillStartDate) ?: date("Y-m-d");
+$prefillEndDate = $normalizeDate((string) $prefillEndDate);
+if ($prefillEndDate !== "" && $prefillEndDate <= $prefillStartDate) {
+    $prefillEndDate = "";
+}
+
 if ($vehicleId > 0) {
     $stmt = $pdo->prepare("SELECT * FROM Vehicles WHERE VehicleID = ?");
     $stmt->execute([$vehicleId]);
@@ -221,8 +235,13 @@ include "view/layout/header.php";
             </div>
           </div>
 
-          <button type="button" class="btn-confirm-booking" id="openTncModal">Confirm Booking <span class="material-symbols-outlined">arrow_forward</span></button>
-          <div class="no-credit-card">NO CREDIT CARD REQUIRED UNTIL CONFIRMATION</div>
+          <button type="button" class="btn-confirm-booking" id="openTncModal">
+            <span class="material-symbols-outlined">payments</span> Proceed to Payment
+          </button>
+          <div class="no-credit-card">
+            <span class="material-symbols-outlined" style="font-size:1rem;vertical-align:middle">lock</span>
+            SECURE PAYMENT VIA <strong>eSewa</strong>
+          </div>
         </form>
       </div>
     </div>

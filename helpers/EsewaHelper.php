@@ -27,9 +27,7 @@ class EsewaHelper
         string $successUrl,
         string $failureUrl
     ): array {
-        // Ensure amount is formatted as a string with no decimals if integer, or consistent decimals
-        // eSewa UAT usually prefers plain integers for whole numbers
-        $formattedAmount = strval($totalAmount);
+        $formattedAmount = $this->formatAmount($totalAmount);
 
         $message = "total_amount={$formattedAmount},transaction_uuid={$transactionUuid},product_code={$this->productCode}";
         $signature = $this->generateSignature($message);
@@ -104,5 +102,14 @@ class EsewaHelper
     public function getProductCode(): string
     {
         return $this->productCode;
+    }
+
+    private function formatAmount(float $amount): string
+    {
+        if (floor($amount) === $amount) {
+            return (string) (int) $amount;
+        }
+
+        return rtrim(rtrim(number_format($amount, 2, '.', ''), '0'), '.');
     }
 }

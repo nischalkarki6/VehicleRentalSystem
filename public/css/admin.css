@@ -373,6 +373,36 @@ body {
   background: #fef2f2;
 }
 
+.status-confirmed {
+  color: #065f46;
+  background: #d1fae5;
+}
+
+.status-paid {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: #065f46;
+  background: #d1fae5;
+  border-radius: var(--radius-full);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.68rem;
+  font-weight: 850;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.text-success {
+  color: #166534;
+  font-weight: 700;
+}
+
+.text-warning {
+  color: #92400e;
+  font-weight: 700;
+}
+
 .role-badge.user {
   color: #334155;
   background: #e2e8f0;

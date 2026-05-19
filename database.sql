@@ -46,11 +46,14 @@ CREATE TABLE IF NOT EXISTS `Rentals` (
     `TotalCost`       DECIMAL(10,2) NOT NULL,
     `Status`          VARCHAR(20) DEFAULT 'Pending',
     `TransactionUUID` VARCHAR(100) DEFAULT NULL,
+    `PaymentMethod`   ENUM('Cash', 'Online') NOT NULL DEFAULT 'Cash',
     `PaymentStatus`   ENUM('Unpaid', 'Paid', 'Failed') DEFAULT 'Unpaid',
     `ReferenceID`     VARCHAR(100) DEFAULT NULL,
     FOREIGN KEY (`UserID`)    REFERENCES `Users`(`UserID`)       ON DELETE CASCADE,
     FOREIGN KEY (`VehicleID`) REFERENCES `Vehicles`(`VehicleID`) ON DELETE CASCADE,
-    UNIQUE INDEX `idx_transaction_uuid` (`TransactionUUID`)
+    UNIQUE INDEX `idx_transaction_uuid` (`TransactionUUID`),
+    INDEX `idx_rental_dates` (`StartDate`, `EndDate`),
+    INDEX `idx_rental_status` (`Status`)
 );
 
 -- =============================================
@@ -96,4 +99,7 @@ CREATE TABLE IF NOT EXISTS `RateLimits` (
 -- Email: admin@admin.com | Password: Admin123
 -- =============================================
 INSERT INTO `Users` (`FullName`, `Email`, `PhoneNumber`, `Password`, `Role`, `IsVerified`)
-VALUES ('System Admin', 'admin@admin.com', '1234567890', '$2y$12$iShJy4B0QUdyjHYUDspOxeqKh2y82IuGxscKosXs4MX/0X.BDmY9q', 'admin', 1);
+VALUES ('System Admin', 'admin@admin.com', '1234567890', '$2y$12$iShJy4B0QUdyjHYUDspOxeqKh2y82IuGxscKosXs4MX/0X.BDmY9q', 'admin', 1)
+ON DUPLICATE KEY UPDATE
+    `Role` = 'admin',
+    `IsVerified` = 1;

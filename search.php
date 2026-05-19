@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 require_once "config/config.php";
 require_once "controllers/VehicleController.php";
 
@@ -19,7 +19,6 @@ if ($requestedType === "4-wheeler") {
 if (!in_array($category, ["Car", "Bike"], true)) {
     $category = "Bike";
 }
-$vehicles = $vehCtrl->getByCategory($category);
 
 $searchContext = [];
 if (!empty($_GET["pickup"])) {
@@ -39,6 +38,8 @@ if (!empty($_GET["start_date"])) {
 if (!empty($_GET["end_date"])) {
     $searchContext["end_date"] = trim($_GET["end_date"]);
 }
+
+$vehicles = $vehCtrl->getByCategory($category, $searchContext["start_date"] ?? null, $searchContext["end_date"] ?? null);
 
 $toggleContext = [];
 foreach (["pickup", "travel", "destination", "dropoff", "date", "start_date", "end_date"] as $param) {

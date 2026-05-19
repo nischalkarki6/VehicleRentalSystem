@@ -71,11 +71,11 @@ $statusCheck = $esewa->checkTransactionStatus($transactionUuid, $totalAmount);
 
 if ($statusCheck && ($statusCheck['status'] ?? '') === 'COMPLETE') {
     $refId = $statusCheck['ref_id'] ?? $transactionCode;
-    $bookingModel->updatePaymentInfo((int) $booking['RentalID'], 'Paid', $refId);
+    $bookingModel->verifyOnlinePayment($transactionUuid, $refId);
     $booking = $bookingModel->findById((int) $booking['RentalID']);
 } else {
     $refId = $transactionCode;
-    $bookingModel->updatePaymentInfo((int) $booking['RentalID'], 'Paid', $refId);
+    $bookingModel->verifyOnlinePayment($transactionUuid, $refId);
     $booking = $bookingModel->findById((int) $booking['RentalID']);
     error_log("[eSewa] Status API check inconclusive for UUID: {$transactionUuid}. Accepted based on signature verification.");
 }

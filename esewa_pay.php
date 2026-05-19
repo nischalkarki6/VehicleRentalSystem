@@ -18,7 +18,7 @@ $booking = $bookingModel->findById((int) $rentalId);
 
 if (
     !$booking ||
-    $booking['UserID'] !== $_SESSION['user_id'] ||
+    (int) $booking['UserID'] !== (int) $_SESSION['user_id'] ||
     $booking['PaymentStatus'] !== 'Unpaid'
 ) {
     setFlash("error", "Invalid or already processed booking.");
