@@ -41,6 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 $title = "Verify Email | DriveEase";
 $css   = "verify";
 $authCss = true;
+$flash = getFlash();
 include "view/layout/auth_header.php";
 ?>
   </head>
@@ -71,6 +72,13 @@ include "view/layout/auth_header.php";
           <span class="material-symbols-outlined">mark_email_read</span>
         </div>
         <h1 class="verify-title">Verify Your Email</h1>
+
+        <?php if ($flash && $flash["type"] === "error"): ?>
+          <div class="alert alert-error">
+            <span class="material-symbols-outlined">error</span>
+            <?= htmlspecialchars($flash["message"]) ?>
+          </div>
+        <?php endif; ?>
 
         <?php if ($status === "error"): ?>
           <p class="verify-text"><?= htmlspecialchars($message) ?></p>
