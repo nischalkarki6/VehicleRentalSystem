@@ -31,14 +31,53 @@ if ($apiKey === '') {
 $history  = isset($input['history']) && is_array($input['history']) ? $input['history'] : [];
 $userMsg  = trim($input['message']);
 
+$fleetRows = [];
+try {
+    $stmt = $pdo->query(
+        "SELECT v.VehicleID, v.Name, v.Category, v.Type, v.Transmission, v.DailyRate
+         FROM Vehicles v
+         WHERE v.IsAvailable = 1
+           AND NOT EXISTS (
+               SELECT 1 FROM Rentals r
+               WHERE r.VehicleID = v.VehicleID
+                 AND r.Status IN ('Confirmed', 'Active')
+           )
+         ORDER BY v.Category ASC, v.Name ASC"
+    );
+    $fleetRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Throwable $e) {
+    error_log('[Chatbot] Failed to load fleet context: ' . $e->getMessage());
+}
+
+$fleetLines = [];
+foreach ($fleetRows as $vehicle) {
+    $type = trim((string) ($vehicle['Type'] ?? ''));
+    $fleetLines[] = sprintf(
+        '- %s | %s%s | %s | Rs. %s/day',
+        $vehicle['Name'],
+        $vehicle['Category'],
+        $type !== '' ? ' - ' . $type : '',
+        $vehicle['Transmission'],
+        number_format((float) $vehicle['DailyRate'], 0)
+    );
+}
+
+$fleetContext = empty($fleetLines)
+    ? 'No vehicles are currently marked available in the DriveEase fleet.'
+    : implode("\n", $fleetLines);
+
 $messages = [];
 
 $systemPrompt = "You are a helpful assistant for DriveEase, a premium vehicle rental company in Nepal. "
     . "You help customers with vehicle bookings, pricing, fleet information, travel tips in Nepal, "
     . "and general support. Be friendly, concise, and professional. "
+    . "Use the CURRENT AVAILABLE FLEET list below as the only source of truth for vehicle names, availability, categories, transmission, and daily pricing. "
+    . "Never recommend, invent, compare, or imply DriveEase has a vehicle that is not listed in CURRENT AVAILABLE FLEET, even if it appeared earlier in the chat. "
+    . "If a customer asks for a vehicle that is not listed, say it is not currently available in the DriveEase fleet and suggest listed alternatives from the same category when possible. "
     . "When helping with a booking, collect the needed booking details, summarize them, and ask the customer to confirm. "
     . "If the customer says yes, ask one final second confirmation before treating the booking as confirmed or directing them to complete it. "
-    . "If asked about something unrelated to vehicle rental or travel, politely redirect the conversation.";
+    . "If asked about something unrelated to vehicle rental or travel, politely redirect the conversation.\n\n"
+    . "CURRENT AVAILABLE FLEET:\n" . $fleetContext;
 
 $messages[] = [
     'role'    => 'system',
@@ -67,7 +106,7 @@ $messages[] = [
 $payload = json_encode([
     'model'       => 'llama-3.3-70b-versatile',
     'messages'    => $messages,
-    'temperature' => 0.7,
+    'temperature' => 0.2,
     'max_tokens'  => 512,
 ]);
 

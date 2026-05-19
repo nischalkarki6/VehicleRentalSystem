@@ -47,7 +47,6 @@ class Booking
              FROM Rentals r
              JOIN Vehicles v ON r.VehicleID = v.VehicleID
              WHERE r.UserID = ?
-             AND r.PaymentStatus = 'Paid'
              ORDER BY r.RentalID DESC",
         );
         $stmt->execute([$userId]);
@@ -80,6 +79,30 @@ class Booking
         return $stmt->execute([$status, $id]);
     }
 
+    public function updateAdminEditableBooking(int $id, array $data): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE Rentals
+             SET VehicleID = ?,
+                 StartDate = ?,
+                 EndDate = ?,
+                 PickupLoc = ?,
+                 DropoffLoc = ?,
+                 TotalCost = ?
+             WHERE RentalID = ?"
+        );
+
+        return $stmt->execute([
+            $data["vehicle_id"],
+            $data["start_date"],
+            $data["end_date"],
+            $data["pickup_loc"],
+            $data["dropoff_loc"],
+            $data["total_cost"],
+            $id,
+        ]);
+    }
+
     /**
      * Find by ID
      */
@@ -100,6 +123,22 @@ class Booking
     }
 
     /**
+     * Delete an unpaid online booking attempt owned by a user.
+     */
+    public function deleteUnpaidOnlineAttempt(int $id, int $userId): bool
+    {
+        $stmt = $this->db->prepare(
+            "DELETE FROM Rentals
+             WHERE RentalID = ?
+               AND UserID = ?
+               AND PaymentMethod = 'Online'
+               AND PaymentStatus = 'Unpaid'"
+        );
+        $stmt->execute([$id, $userId]);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
      * Find by Transaction UUID
      */
     public function findByTransactionUUID(string $uuid): ?array
@@ -107,6 +146,39 @@ class Booking
         $stmt = $this->db->prepare("SELECT * FROM Rentals WHERE TransactionUUID = ?");
         $stmt->execute([$uuid]);
         return $stmt->fetch() ?: null;
+    }
+
+    public function deleteUnpaidOnlineAttemptByTransactionUUID(string $uuid, int $userId): bool
+    {
+        $stmt = $this->db->prepare(
+            "DELETE FROM Rentals
+             WHERE TransactionUUID = ?
+               AND UserID = ?
+               AND PaymentMethod = 'Online'
+               AND PaymentStatus = 'Unpaid'"
+        );
+        $stmt->execute([$uuid, $userId]);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function deleteOverlappingUnpaidOnlineAttemptsForUser(
+        int $userId,
+        int $vehicleId,
+        string $startDate,
+        string $endDate
+    ): int {
+        $stmt = $this->db->prepare(
+            "DELETE FROM Rentals
+             WHERE UserID = ?
+               AND VehicleID = ?
+               AND PaymentMethod = 'Online'
+               AND PaymentStatus = 'Unpaid'
+               AND Status = 'Pending'
+               AND StartDate <= ?
+               AND EndDate >= ?"
+        );
+        $stmt->execute([$userId, $vehicleId, $endDate, $startDate]);
+        return $stmt->rowCount();
     }
 
     public function hasOverlappingBooking(
@@ -143,6 +215,27 @@ class Booking
             FROM Rentals
             WHERE VehicleID = ?
               AND Status = 'Active'
+        ";
+        $params = [$vehicleId];
+
+        if ($excludeRentalId !== null) {
+            $sql .= " AND RentalID <> ?";
+            $params[] = $excludeRentalId;
+        }
+
+        $sql .= " LIMIT 1";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (bool) $stmt->fetchColumn();
+    }
+
+    public function hasUnavailableBookingForVehicle(int $vehicleId, ?int $excludeRentalId = null): bool
+    {
+        $sql = "
+            SELECT RentalID
+            FROM Rentals
+            WHERE VehicleID = ?
+              AND Status IN ('Confirmed', 'Active')
         ";
         $params = [$vehicleId];
 
@@ -196,6 +289,19 @@ class Booking
         return $stmt->execute([$paymentStatus, $refId, $id]);
     }
 
+    public function updateTransactionUuid(int $id, string $transactionUuid): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE Rentals
+             SET TransactionUUID = ?
+             WHERE RentalID = ?
+               AND PaymentStatus = 'Unpaid'
+               AND Status = 'Pending'"
+        );
+        $stmt->execute([$transactionUuid, $id]);
+        return $stmt->rowCount() > 0;
+    }
+
     /**
      * Verifies an online payment, marks it as Paid, and Confirms the booking.
      */
@@ -205,7 +311,7 @@ class Booking
             $this->db->beginTransaction();
 
             $stmt = $this->db->prepare("
-                SELECT RentalID, Status, PaymentStatus
+                SELECT RentalID, VehicleID, Status, PaymentStatus
                 FROM Rentals
                 WHERE TransactionUUID = :uuid
                 FOR UPDATE
@@ -235,6 +341,13 @@ class Booking
                 ':refId' => $referenceId,
                 ':uuid'  => $transactionUuid
             ]);
+
+            $vehicleStmt = $this->db->prepare("
+                UPDATE Vehicles
+                SET IsAvailable = 0
+                WHERE VehicleID = :vehicleId
+            ");
+            $vehicleStmt->execute([':vehicleId' => $booking['VehicleID']]);
 
             $this->db->commit();
             return true;

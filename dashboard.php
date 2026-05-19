@@ -63,6 +63,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && isset($_POST["action"])) {
         }
         redirect("dashboard.php");
     }
+
+    if ($_POST["action"] === "retry_payment") {
+        $rentalId = (int) ($_POST["rental_id"] ?? 0);
+        if ($rentalId > 0) {
+            $result = $booking->startPaymentRetry($rentalId, $userId);
+            if ($result["success"]) {
+                redirect("esewa_pay.php");
+            }
+
+            setFlash("error", $result["error"] ?? "Unable to retry payment.");
+        }
+        redirect("dashboard.php?tab=orders");
+    }
 }
 
 // -- Fetch data ----------------------------------------------------------------
@@ -330,7 +343,7 @@ include "view/layout/header.php";
       <?php if (empty($rentals)): ?>
         <div class="empty-state">
           <span class="material-symbols-outlined">car_rental</span>
-          <p>No completed bookings yet.</p>
+          <p>No bookings yet.</p>
           <a href="fleet.php" class="btn-primary mt-1">
             Book a Vehicle
           </a>
@@ -347,10 +360,16 @@ include "view/layout/header.php";
                 <th>Total (NPR)</th>
                 <th>Payment</th>
                 <th>Status</th>
+                <th>Action</th>
               </tr>
             </thead>
             <tbody>
               <?php foreach ($rentals as $r): ?>
+              <?php
+                $paymentStatus = strtolower(trim((string) ($r["PaymentStatus"] ?? "unpaid")));
+                $bookingStatus = strtolower(trim((string) ($r["Status"] ?? "")));
+                $canRetryPayment = $paymentStatus === "unpaid" && $bookingStatus === "pending";
+              ?>
               <tr>
                 <td><?= $r["RentalID"] ?></td>
                 <td>
@@ -379,10 +398,17 @@ include "view/layout/header.php";
                     2,
                 ) ?></strong></td>
                 <td>
-                  <span class="status-badge status-paid">
-                    <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">verified</span>
-                    Paid via eSewa
-                  </span>
+                  <?php if ($paymentStatus === "paid"): ?>
+                    <span class="status-badge status-paid">
+                      <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">verified</span>
+                      Paid via eSewa
+                    </span>
+                  <?php else: ?>
+                    <span class="status-badge status-pending">
+                      <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">schedule</span>
+                      Payment pending
+                    </span>
+                  <?php endif; ?>
                 </td>
                 <td>
                   <span class="status-badge status-<?= strtolower(
@@ -390,6 +416,21 @@ include "view/layout/header.php";
                   ) ?>">
                     <?= htmlspecialchars($r["Status"]) ?>
                   </span>
+                </td>
+                <td>
+                  <?php if ($canRetryPayment): ?>
+                    <form method="POST" class="action-btns">
+                      <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                      <input type="hidden" name="action" value="retry_payment">
+                      <input type="hidden" name="rental_id" value="<?= $r["RentalID"] ?>">
+                      <button type="submit" class="btn-xs btn-approve">
+                        <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle;margin-right:2px">payments</span>
+                        Pay Now
+                      </button>
+                    </form>
+                  <?php else: ?>
+                    <span class="text-muted-alt">-</span>
+                  <?php endif; ?>
                 </td>
               </tr>
               <?php endforeach; ?>

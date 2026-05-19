@@ -10,6 +10,7 @@ if (!in_array($category, ["Car", "Bike"])) {
     $category = "Bike";
 }
 $vehicles = $vehCtrl->getByCategory($category);
+$isAdmin = (($_SESSION["role"] ?? "") === "admin");
 
 $title = "Available " . ($category === "Car" ? "Four Wheelers" : "Two Wheelers") . " | DriveEase";
 $page = "fleet";
@@ -100,7 +101,9 @@ include "view/layout/header.php";
                   <span><span class="material-symbols-outlined">settings</span> <?= strtoupper(htmlspecialchars($v["Transmission"])) ?></span>
                 </div>
                 
-                <?php if (isset($_SESSION["user_id"])): ?>
+                <?php if ($isAdmin): ?>
+                  <a href="bookings.php?vehicle_id=<?= $v["VehicleID"] ?>" class="btn-book">VIEW DETAILS</a>
+                <?php elseif (isset($_SESSION["user_id"])): ?>
                   <a href="bookings.php?vehicle_id=<?= $v["VehicleID"] ?>" class="btn-book">BOOK NOW</a>
                 <?php else: ?>
                   <a href="login.php?redirect=<?= urlencode('bookings.php?vehicle_id=' . $v["VehicleID"]) ?>" class="btn-book">LOGIN TO BOOK</a>

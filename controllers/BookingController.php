@@ -19,6 +19,13 @@ class BookingController
 
     public function create(int $userId, array $data): array
     {
+        if (($_SESSION["role"] ?? "") === "admin") {
+            return [
+                "success" => false,
+                "errors" => ["form" => "Admins can view fleet details only. Booking is available for customer accounts."],
+            ];
+        }
+
         $errors = $this->validateBooking($data);
         if (!empty($errors)) {
             return ["success" => false, "errors" => $errors];
@@ -44,6 +51,21 @@ class BookingController
                 ];
             }
             if (!$vehicle["IsAvailable"]) {
+                $this->pdo->rollBack();
+                return [
+                    "success" => false,
+                    "errors" => ["form" => "This vehicle is no longer available."],
+                ];
+            }
+
+            $this->bookingModel->deleteOverlappingUnpaidOnlineAttemptsForUser(
+                $userId,
+                $vehicleId,
+                $data["start_date"],
+                $data["end_date"]
+            );
+
+            if ($this->bookingModel->hasUnavailableBookingForVehicle($vehicleId)) {
                 $this->pdo->rollBack();
                 return [
                     "success" => false,
@@ -124,19 +146,153 @@ class BookingController
             return false;
         }
 
-        // Sync vehicle availability
-        if ($status === "Active") {
-            // Activation marks the vehicle unavailable until the active rental ends.
+        // Sync vehicle availability with booking lifecycle.
+        if ($status === "Confirmed" || $status === "Active") {
             $this->vehicleModel->setAvailability($booking["VehicleID"], false);
         } elseif (
             ($status === "Completed" || $status === "Cancelled") &&
-            $booking["Status"] === "Active" &&
-            !$this->bookingModel->hasActiveBookingForVehicle((int) $booking["VehicleID"], $id)
+            in_array($booking["Status"], ["Confirmed", "Active"], true) &&
+            !$this->bookingModel->hasUnavailableBookingForVehicle((int) $booking["VehicleID"], $id)
         ) {
             $this->vehicleModel->setAvailability($booking["VehicleID"], true);
         }
 
         return true;
+    }
+
+    public function updateAdminEditableBooking(int $id, array $data): array
+    {
+        $booking = $this->bookingModel->findById($id);
+        if (!$booking || !$this->canAdminModifyBooking($booking)) {
+            return [
+                "success" => false,
+                "error" => "Only unpaid or pending bookings can be edited.",
+            ];
+        }
+
+        $errors = $this->validateBooking($data);
+        if (!empty($errors)) {
+            return [
+                "success" => false,
+                "error" => reset($errors) ?: "Please check the booking details.",
+            ];
+        }
+
+        $vehicleId = (int) $data["vehicle_id"];
+        $start = $this->parseBookingDate($data["start_date"]);
+        $end = $this->parseBookingDate($data["end_date"]);
+
+        try {
+            $this->pdo->beginTransaction();
+
+            $vehicle = $this->vehicleModel->findByIdForUpdate($vehicleId);
+            if (!$vehicle) {
+                $this->pdo->rollBack();
+                return ["success" => false, "error" => "Vehicle not found."];
+            }
+
+            if ($this->bookingModel->hasOverlappingBooking(
+                $vehicleId,
+                $data["start_date"],
+                $data["end_date"],
+                $id
+            )) {
+                $this->pdo->rollBack();
+                return [
+                    "success" => false,
+                    "error" => "This vehicle already has a booking for the selected dates.",
+                ];
+            }
+
+            $multiplier = $this->vehicleModel->calculateCategoryMultiplier($vehicle["Category"]);
+            $dynamicRate = round((float) $vehicle["DailyRate"] * $multiplier);
+            $days = max(1, (int) $start->diff($end)->days);
+            $insuranceFee = $dynamicRate > 4500 ? 3300 : 0;
+
+            $updated = $this->bookingModel->updateAdminEditableBooking($id, [
+                "vehicle_id" => $vehicleId,
+                "start_date" => $data["start_date"],
+                "end_date" => $data["end_date"],
+                "pickup_loc" => trim($data["pickup_loc"] ?? ""),
+                "dropoff_loc" => trim($data["dropoff_loc"] ?? ""),
+                "total_cost" => ($days * $dynamicRate) + $insuranceFee,
+            ]);
+
+            if (!$updated) {
+                $this->pdo->rollBack();
+                return ["success" => false, "error" => "Booking update failed."];
+            }
+
+            $this->pdo->commit();
+            return ["success" => true];
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            error_log("[BookingController::updateAdminEditableBooking] " . $e->getMessage());
+            return ["success" => false, "error" => "Booking update failed."];
+        }
+    }
+
+    public function deleteAdminEditableBooking(int $id): bool
+    {
+        $booking = $this->bookingModel->findById($id);
+        if (!$booking || !$this->canAdminModifyBooking($booking)) {
+            return false;
+        }
+
+        try {
+            $this->pdo->beginTransaction();
+            $deleted = $this->bookingModel->delete($id);
+
+            if (!$deleted) {
+                $this->pdo->rollBack();
+                return false;
+            }
+
+            if (
+                in_array($booking["Status"], ["Confirmed", "Active"], true) &&
+                !$this->bookingModel->hasUnavailableBookingForVehicle((int) $booking["VehicleID"], $id)
+            ) {
+                $this->vehicleModel->setAvailability((int) $booking["VehicleID"], true);
+            }
+
+            $this->pdo->commit();
+            return true;
+        } catch (Throwable $e) {
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+            error_log("[BookingController::deleteAdminEditableBooking] " . $e->getMessage());
+            return false;
+        }
+    }
+
+    public function startPaymentRetry(int $id, int $userId): array
+    {
+        $booking = $this->bookingModel->findById($id);
+        if (
+            !$booking ||
+            (int) $booking["UserID"] !== $userId ||
+            strtolower(trim((string) ($booking["PaymentStatus"] ?? ""))) !== "unpaid" ||
+            strtolower(trim((string) ($booking["Status"] ?? ""))) !== "pending"
+        ) {
+            return [
+                "success" => false,
+                "error" => "This booking cannot be paid again.",
+            ];
+        }
+
+        $transactionUuid = $this->generateTransactionUuid();
+        if (!$this->bookingModel->updateTransactionUuid($id, $transactionUuid)) {
+            return [
+                "success" => false,
+                "error" => "Unable to restart payment. Please try again.",
+            ];
+        }
+
+        $_SESSION["esewa_rental_id"] = $id;
+        return ["success" => true];
     }
 
     public function completeExpiredRentals(): int
@@ -148,7 +304,7 @@ class BookingController
             $vehicleIds = $this->bookingModel->completeExpiredActiveRentals($today);
 
             foreach ($vehicleIds as $vehicleId) {
-                if (!$this->bookingModel->hasActiveBookingForVehicle((int) $vehicleId)) {
+                if (!$this->bookingModel->hasUnavailableBookingForVehicle((int) $vehicleId)) {
                     $this->vehicleModel->setAvailability((int) $vehicleId, true);
                 }
             }
@@ -217,6 +373,14 @@ class BookingController
         }
 
         return $date;
+    }
+
+    private function canAdminModifyBooking(array $booking): bool
+    {
+        $status = strtolower(trim((string) ($booking["Status"] ?? "")));
+        $paymentStatus = strtolower(trim((string) ($booking["PaymentStatus"] ?? "")));
+
+        return $status === "pending" || $paymentStatus === "unpaid";
     }
 
     private function generateTransactionUuid(): string

@@ -40,6 +40,7 @@ if (!empty($_GET["end_date"])) {
 }
 
 $vehicles = $vehCtrl->getByCategory($category, $searchContext["start_date"] ?? null, $searchContext["end_date"] ?? null);
+$isAdmin = (($_SESSION["role"] ?? "") === "admin");
 
 $toggleContext = [];
 foreach (["pickup", "travel", "destination", "dropoff", "date", "start_date", "end_date"] as $param) {
@@ -145,7 +146,9 @@ include "view/layout/header.php";
                   <span><span class="material-symbols-outlined">settings</span> <?= strtoupper(htmlspecialchars($v["Transmission"])) ?></span>
                 </div>
                 
-                <?php if (isset($_SESSION["user_id"])): ?>
+                <?php if ($isAdmin): ?>
+                  <a href="<?= htmlspecialchars($bookingUrl) ?>" class="btn-book">VIEW DETAILS</a>
+                <?php elseif (isset($_SESSION["user_id"])): ?>
                   <a href="<?= htmlspecialchars($bookingUrl) ?>" class="btn-book">BOOK NOW</a>
                 <?php else: ?>
                   <a href="login.php?redirect=<?= urlencode($bookingUrl) ?>" class="btn-book">LOGIN TO BOOK</a>

@@ -266,7 +266,8 @@ body {
   font-weight: 700;
 }
 
-#addVehicleForm {
+#addVehicleForm,
+#editBookingForm {
   background: #f8fafc !important;
   border: 1px solid var(--border) !important;
   border-radius: var(--radius-md) !important;
