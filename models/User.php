@@ -28,12 +28,12 @@ class User
         $role = $data["role"] ?? "user";
         $isVerified = $role === "admin" ? 1 : 0;
         $verificationHash = $isVerified ? null : ($tokenHash ?: null);
-        $verificationExpiry = $isVerified ? null : date("Y-m-d H:i:s", time() + 3600);
+        $verificationExpirySql = $isVerified ? "NULL" : "DATE_ADD(NOW(), INTERVAL 60 MINUTE)";
 
         $stmt = $this->db->prepare(
             "INSERT INTO Users (FullName, Email, PhoneNumber, Password, Address, Role,
                                  IsVerified, VerificationTokenHash, VerificationExpiry)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, {$verificationExpirySql})",
         );
         return $stmt->execute([
             $data["fullname"],
@@ -44,7 +44,6 @@ class User
             $role,
             $isVerified,
             $verificationHash,
-            $verificationExpiry,
         ]);
     }
 

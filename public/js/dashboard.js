@@ -20,9 +20,13 @@ function switchTab(event, tabId) {
 document.addEventListener("DOMContentLoaded", () => {
   const page = document.getElementById("dashboardPage");
   const errTab = page ? page.dataset.errTab : "";
-  if (errTab) {
-    const btn = document.getElementById("btn-" + errTab);
-    switchTab(btn ? { currentTarget: btn } : null, errTab);
+  const requestedTab = new URLSearchParams(window.location.search).get("tab");
+  const initialTab = errTab || requestedTab;
+  if (initialTab) {
+    const btn = document.getElementById("btn-" + initialTab);
+    if (btn && document.getElementById("tab-" + initialTab)) {
+      switchTab({ currentTarget: btn }, initialTab);
+    }
   }
 
   document.querySelectorAll(".pass-toggle").forEach((btn) => {

@@ -1,30 +1,9 @@
 <?php
 require_once "config/config.php";
-require_once "models/Booking.php";
 
 requireLogin();
 
-$bookingModel = new Booking($pdo);
-
-$encodedData = $_GET['data'] ?? '';
-
-if (!empty($encodedData)) {
-    $decoded = base64_decode($encodedData, true);
-    if ($decoded) {
-        $responseData = json_decode($decoded, true);
-        if ($responseData && !empty($responseData['transaction_uuid'])) {
-            $booking = $bookingModel->findByTransactionUUID($responseData['transaction_uuid']);
-            if (
-                $booking &&
-                (int)$booking['UserID'] === (int)$_SESSION['user_id'] &&
-                $booking['PaymentStatus'] === 'Unpaid'
-            ) {
-                // Delete the incomplete booking so it never shows in history
-                $bookingModel->delete((int)$booking['RentalID']);
-            }
-        }
-    }
-}
+unset($_SESSION['esewa_rental_id']);
 
 $title = "Payment Failed | DriveEase";
 $page  = "esewa";
@@ -38,14 +17,14 @@ include "view/layout/header.php";
       <span class="material-symbols-outlined">cancel</span>
     </div>
     <h1>Payment Failed</h1>
-    <p>Your payment could not be completed. Your booking has been removed - no charges were made. Please try again to make a new booking.</p>
+    <p>Your payment could not be completed. No charges were made, and your booking is still saved as pending so you can retry payment from your order history.</p>
 
     <div class="esewa-btn-group">
-      <a href="fleet.php" class="esewa-btn esewa-btn-primary">
-        <span class="material-symbols-outlined">directions_car</span> Book Again
+      <a href="dashboard.php?tab=orders" class="esewa-btn esewa-btn-primary">
+        <span class="material-symbols-outlined">receipt_long</span> Order History
       </a>
-      <a href="dashboard.php" class="esewa-btn esewa-btn-secondary">
-        <span class="material-symbols-outlined">dashboard</span> Dashboard
+      <a href="fleet.php" class="esewa-btn esewa-btn-secondary">
+        <span class="material-symbols-outlined">directions_car</span> Browse Fleet
       </a>
     </div>
   </div>

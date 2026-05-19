@@ -6,6 +6,7 @@ require_once "controllers/VehicleController.php";
 requireLogin(); // User must be logged in to book
 
 $bookCtrl = new BookingController($pdo);
+$isAdmin = (($_SESSION["role"] ?? "") === "admin");
 
 $vehicleId = (int) ($_GET["vehicle_id"] ?? 0);
 $vehicle = null;
@@ -51,7 +52,9 @@ if (!$vehicle) {
 
 $errors = [];
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    if (!verifyCsrfToken($_POST["csrf_token"] ?? "")) {
+    if ($isAdmin) {
+        $errors["form"] = "Admins can view fleet details only. Booking is available for customer accounts.";
+    } elseif (!verifyCsrfToken($_POST["csrf_token"] ?? "")) {
         $errors["form"] = "Invalid request. Please try again.";
     } else {
         $result = $bookCtrl->create($_SESSION["user_id"], $_POST);
@@ -174,6 +177,25 @@ include "view/layout/header.php";
           <?php endforeach; ?>
         <?php endif; ?>
 
+        <?php if ($isAdmin): ?>
+          <div class="booking-error">
+            Admin view only. Customer booking and payment controls are disabled.
+          </div>
+          <div class="receipt">
+            <div class="receipt-row">
+              <span>Status</span>
+              <span>View only</span>
+            </div>
+            <div class="receipt-row">
+              <span>Category</span>
+              <span><?= htmlspecialchars($vehicle["Category"]) ?></span>
+            </div>
+            <div class="receipt-row total">
+              <span>Daily Rate</span>
+              <span>Rs. <?= number_format($vehicle['DailyRate'], 0) ?></span>
+            </div>
+          </div>
+        <?php else: ?>
         <form method="POST" class="widget-form" id="bookingForm">
           <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
           <input type="hidden" name="vehicle_id" value="<?= $vehicleId ?>" />
@@ -243,12 +265,14 @@ include "view/layout/header.php";
             SECURE PAYMENT VIA <strong>eSewa</strong>
           </div>
         </form>
+        <?php endif; ?>
       </div>
     </div>
   </div>
 </main>
 
 <!-- Terms & Conditions Modal -->
+<?php if (!$isAdmin): ?>
 <div id="tncModal" class="tnc-overlay" aria-hidden="true" role="dialog" aria-modal="true" aria-labelledby="tncModalTitle">
   <div class="tnc-modal">
     <div class="tnc-modal-header">
@@ -315,5 +339,6 @@ include "view/layout/header.php";
     </div>
   </div>
 </div>
+<?php endif; ?>
 
 <?php include "view/layout/footer.php"; ?>

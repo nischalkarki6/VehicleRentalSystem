@@ -69,6 +69,38 @@ document.addEventListener("DOMContentLoaded", () => {
     window.scrollTo({ top: addForm.offsetTop - 50, behavior: 'smooth' });
   };
 
+  window.editBooking = function (booking) {
+    const editForm = document.getElementById("editBookingForm");
+    const form = document.getElementById("bookingFormAdmin");
+    if (!editForm || !form) return;
+
+    const setValue = (selector, value) => {
+      const field = form.querySelector(selector);
+      if (field) field.value = value || "";
+    };
+
+    setValue("#editBookingId", booking.RentalID);
+    setValue("#editBookingVehicle", booking.VehicleID);
+    setValue("#editBookingStart", booking.StartDate);
+    setValue("#editBookingEnd", booking.EndDate);
+    setValue("#editBookingPickup", booking.PickupLoc);
+    setValue("#editBookingDropoff", booking.DropoffLoc);
+
+    editForm.classList.remove("d-none");
+    editForm.style.display = "block";
+    window.scrollTo({ top: editForm.offsetTop - 50, behavior: "smooth" });
+  };
+
+  window.closeBookingEditForm = function () {
+    const editForm = document.getElementById("editBookingForm");
+    const form = document.getElementById("bookingFormAdmin");
+    if (form) form.reset();
+    if (editForm) {
+      editForm.style.display = "none";
+      editForm.classList.add("d-none");
+    }
+  };
+
   if (addForm && addForm.dataset.hasErrors === "1") {
     addForm.classList.remove("d-none");
     addForm.style.display = "block";

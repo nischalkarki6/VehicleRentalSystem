@@ -25,7 +25,15 @@ class Vehicle
     public function getAvailable(): array
     {
         $stmt = $this->db->query(
-            "SELECT * FROM Vehicles WHERE IsAvailable = 1 ORDER BY Name ASC",
+            "SELECT *
+             FROM Vehicles v
+             WHERE v.IsAvailable = 1
+               AND NOT EXISTS (
+                   SELECT 1 FROM Rentals r
+                   WHERE r.VehicleID = v.VehicleID
+                     AND r.Status IN ('Confirmed', 'Active')
+               )
+             ORDER BY v.Name ASC",
         );
         return $stmt->fetchAll();
     }
@@ -35,17 +43,23 @@ class Vehicle
      */
     public function getByCategory(string $category, ?string $startDate = null, ?string $endDate = null): array
     {
-        $sql = "SELECT * FROM Vehicles WHERE Category = :cat AND IsAvailable = 1";
+        $sql = "SELECT * FROM Vehicles v WHERE v.Category = :cat AND v.IsAvailable = 1";
         $params = [':cat' => $category];
 
         if ($startDate && $endDate) {
-            $sql .= " AND VehicleID NOT IN (
-                SELECT VehicleID FROM Rentals
-                WHERE Status IN ('Pending', 'Confirmed', 'Active')
-                AND (StartDate <= :end_date AND EndDate >= :start_date)
+            $sql .= " AND v.VehicleID NOT IN (
+                SELECT r.VehicleID FROM Rentals r
+                WHERE r.Status IN ('Pending', 'Confirmed', 'Active')
+                AND (r.StartDate <= :end_date AND r.EndDate >= :start_date)
             )";
             $params[':start_date'] = $startDate;
             $params[':end_date'] = $endDate;
+        } else {
+            $sql .= " AND NOT EXISTS (
+                SELECT 1 FROM Rentals r
+                WHERE r.VehicleID = v.VehicleID
+                  AND r.Status IN ('Confirmed', 'Active')
+            )";
         }
 
         $stmt = $this->db->prepare($sql);
@@ -120,32 +134,38 @@ class Vehicle
      */
     public function search(array $filters): array
     {
-        $sql = "SELECT * FROM Vehicles WHERE IsAvailable = 1";
+        $sql = "SELECT * FROM Vehicles v WHERE v.IsAvailable = 1";
         $params = [];
 
         if (!empty($filters["category"])) {
-            $sql .= " AND Category = ?";
+            $sql .= " AND v.Category = ?";
             $params[] = $filters["category"];
         }
 
         if (!empty($filters["type"])) {
-            $sql .= " AND Type LIKE ?";
+            $sql .= " AND v.Type LIKE ?";
             $params[] = "%" . $filters["type"] . "%";
         }
 
         if (!empty($filters["transmission"])) {
-            $sql .= " AND Transmission = ?";
+            $sql .= " AND v.Transmission = ?";
             $params[] = $filters["transmission"];
         }
 
         if (!empty($filters["start_date"]) && !empty($filters["end_date"])) {
-            $sql .= " AND VehicleID NOT IN (
-                SELECT VehicleID FROM Rentals
-                WHERE Status IN ('Pending', 'Confirmed', 'Active')
-                AND (StartDate <= ? AND EndDate >= ?)
+            $sql .= " AND v.VehicleID NOT IN (
+                SELECT r.VehicleID FROM Rentals r
+                WHERE r.Status IN ('Pending', 'Confirmed', 'Active')
+                AND (r.StartDate <= ? AND r.EndDate >= ?)
             )";
             $params[] = $filters["end_date"];
             $params[] = $filters["start_date"];
+        } else {
+            $sql .= " AND NOT EXISTS (
+                SELECT 1 FROM Rentals r
+                WHERE r.VehicleID = v.VehicleID
+                  AND r.Status IN ('Confirmed', 'Active')
+            )";
         }
 
         $stmt = $this->db->prepare($sql);

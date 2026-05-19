@@ -12,6 +12,7 @@ $encodedData = $_GET['data'] ?? '';
 $errorMsg    = '';
 $booking     = null;
 $refId       = '';
+$userId      = (int) $_SESSION['user_id'];
 
 if (empty($encodedData)) {
     setFlash("error", "No payment response received.");
@@ -42,12 +43,13 @@ if (!$booking) {
     redirect("dashboard.php");
 }
 
-if ((int) $booking['UserID'] !== (int) $_SESSION['user_id']) {
+if ((int) $booking['UserID'] !== $userId) {
     setFlash("error", "Unauthorized access.");
     redirect("dashboard.php");
 }
 
 if ($booking['PaymentStatus'] === 'Paid') {
+    unset($_SESSION['esewa_rental_id']);
     setFlash("success", "This payment was already confirmed.");
     redirect("dashboard.php");
 }
@@ -56,15 +58,15 @@ $signatureValid = $esewa->verifyResponseSignature($responseData);
 
 if (!$signatureValid) {
     error_log("[eSewa] Signature mismatch for UUID: {$transactionUuid}");
-    $bookingModel->updatePaymentInfo((int) $booking['RentalID'], 'Failed', null);
+    unset($_SESSION['esewa_rental_id']);
     setFlash("error", "Payment verification failed. Potential fraud detected.");
-    redirect("dashboard.php");
+    redirect("dashboard.php?tab=orders");
 }
 
 if ($status !== 'COMPLETE') {
-    $bookingModel->updatePaymentInfo((int) $booking['RentalID'], 'Failed', null);
+    unset($_SESSION['esewa_rental_id']);
     setFlash("error", "Payment was not completed. Status: " . htmlspecialchars($status));
-    redirect("dashboard.php");
+    redirect("dashboard.php?tab=orders");
 }
 
 $statusCheck = $esewa->checkTransactionStatus($transactionUuid, $totalAmount);
@@ -79,6 +81,8 @@ if ($statusCheck && ($statusCheck['status'] ?? '') === 'COMPLETE') {
     $booking = $bookingModel->findById((int) $booking['RentalID']);
     error_log("[eSewa] Status API check inconclusive for UUID: {$transactionUuid}. Accepted based on signature verification.");
 }
+
+unset($_SESSION['esewa_rental_id']);
 
 $title = "Payment Successful | DriveEase";
 $page  = "esewa";

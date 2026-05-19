@@ -31,6 +31,29 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         redirect("admin.php?tab=" . urlencode($tab));
     }
 
+    if ($action === "edit_booking") {
+        $rentalId = (int) ($_POST["rental_id"] ?? 0);
+        if ($rentalId > 0) {
+            $result = $bookCtrl->updateAdminEditableBooking($rentalId, $_POST);
+            if ($result["success"]) {
+                setFlash("success", "Booking #$rentalId updated.");
+            } else {
+                setFlash("error", $result["error"] ?? "Unable to update booking #$rentalId.");
+            }
+        }
+        redirect("admin.php?tab=bookings");
+    }
+
+    if ($action === "delete_booking") {
+        $rentalId = (int) ($_POST["rental_id"] ?? 0);
+        if ($rentalId > 0 && $bookCtrl->deleteAdminEditableBooking($rentalId)) {
+            setFlash("success", "Booking #$rentalId deleted.");
+        } else {
+            setFlash("error", "Only unpaid or pending bookings can be deleted.");
+        }
+        redirect("admin.php?tab=bookings");
+    }
+
     // Add vehicle
     if ($action === "add_vehicle") {
         $result = $vehCtrl->addVehicle($_POST, $_FILES["image"] ?? ["error" => UPLOAD_ERR_NO_FILE]);
@@ -308,9 +331,59 @@ include "view/layout/header.php";
         <select id="statusFilter" class="dash-input w-max-160"
                 onchange="filterByStatus()">
           <option value="">All Statuses</option>
+          <option>Pending</option>
           <option>Confirmed</option><option>Active</option>
           <option>Completed</option><option>Cancelled</option>
         </select>
+      </div>
+
+      <div id="editBookingForm" class="d-none bg-light p-2 mb-2 rounded-12 border-light">
+        <h3 class="m-0 mb-15">Edit Booking</h3>
+        <form method="POST" id="bookingFormAdmin" novalidate>
+          <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+          <input type="hidden" name="action" value="edit_booking">
+          <input type="hidden" name="rental_id" id="editBookingId">
+
+          <div class="form-row-dash">
+            <div class="form-group-dash">
+              <label>Vehicle *</label>
+              <select name="vehicle_id" id="editBookingVehicle" class="dash-input" required>
+                <?php foreach ($allVehicles as $vehicleOption): ?>
+                  <option value="<?= $vehicleOption["VehicleID"] ?>">
+                    <?= htmlspecialchars($vehicleOption["Name"]) ?> - <?= htmlspecialchars($vehicleOption["Category"]) ?>
+                  </option>
+                <?php endforeach; ?>
+              </select>
+            </div>
+            <div class="form-group-dash">
+              <label>Pickup location *</label>
+              <input type="text" name="pickup_loc" id="editBookingPickup" class="dash-input" required>
+            </div>
+          </div>
+
+          <div class="form-row-dash">
+            <div class="form-group-dash">
+              <label>Start date *</label>
+              <input type="date" name="start_date" id="editBookingStart" class="dash-input" required>
+            </div>
+            <div class="form-group-dash">
+              <label>End date *</label>
+              <input type="date" name="end_date" id="editBookingEnd" class="dash-input" required>
+            </div>
+          </div>
+
+          <div class="form-group-dash">
+            <label>Destination *</label>
+            <input type="text" name="dropoff_loc" id="editBookingDropoff" class="dash-input" required>
+          </div>
+
+          <div style="display:flex;gap:1rem;margin-top:1rem">
+            <button type="submit" class="btn-dash-primary">
+              <span class="material-symbols-outlined">save</span> Save Booking
+            </button>
+            <button type="button" class="btn-dash-secondary" onclick="closeBookingEditForm()">Cancel</button>
+          </div>
+        </form>
       </div>
 
       <div class="orders-table-wrapper">
@@ -324,6 +397,11 @@ include "view/layout/header.php";
           </thead>
           <tbody>
             <?php foreach ($allBookings as $b): ?>
+            <?php
+              $bookingStatus = strtolower(trim((string) ($b["Status"] ?? "")));
+              $bookingPaymentStatus = strtolower(trim((string) ($b["PaymentStatus"] ?? "unpaid")));
+              $canModifyBooking = ($bookingStatus === "pending") || ($bookingPaymentStatus === "unpaid");
+            ?>
             <tr data-status="<?= $b["Status"] ?>">
               <td>#<?= $b["RentalID"] ?></td>
               <td>
@@ -356,6 +434,27 @@ include "view/layout/header.php";
                   $b["Status"],
               ) ?>"><?= $b["Status"] ?></span></td>
               <td class="action-btns">
+                <?php if ($canModifyBooking): ?>
+                  <button type="button" class="btn-xs btn-complete" onclick='editBooking(<?= htmlspecialchars(json_encode([
+                      "RentalID" => $b["RentalID"],
+                      "VehicleID" => $b["VehicleID"],
+                      "StartDate" => $b["StartDate"],
+                      "EndDate" => $b["EndDate"],
+                      "PickupLoc" => $b["PickupLoc"],
+                      "DropoffLoc" => $b["DropoffLoc"],
+                  ]), ENT_QUOTES, "UTF-8") ?>)'>
+                    <span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle; margin-right:2px;">edit</span> Edit
+                  </button>
+                  <form method="POST" class="confirm-delete">
+                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
+                    <input type="hidden" name="action"    value="delete_booking">
+                    <input type="hidden" name="rental_id" value="<?= $b["RentalID"] ?>">
+                    <button type="submit" class="btn-xs btn-reject">
+                      <span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle; margin-right:2px;">delete</span> Delete
+                    </button>
+                  </form>
+                <?php endif; ?>
+
                 <?php if ($b["Status"] === "Confirmed"): ?>
                   <form method="POST">
                     <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
@@ -385,7 +484,7 @@ include "view/layout/header.php";
                     <input type="hidden" name="status"    value="Completed">
                     <button type="submit" class="btn-xs btn-complete">Complete</button>
                   </form>
-                <?php else: ?>
+                <?php elseif (!$canModifyBooking): ?>
                   <span style="color:#aaa;font-size:0.8rem">-</span>
                 <?php endif; ?>
               </td>
