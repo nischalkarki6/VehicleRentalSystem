@@ -1,6 +1,3 @@
-// -- dashboard.js -------------------------------------------------------------
-
-// -- Tab switching -------------------------------------------------------------
 function switchTab(event, tabId) {
   document.querySelectorAll(".tab-pane").forEach((el) => {
     el.classList.add("d-none");
@@ -20,9 +17,7 @@ function switchTab(event, tabId) {
   }
 }
 
-// -- Auto-open correct tab when there are server-side errors (POST back) -------
 document.addEventListener("DOMContentLoaded", () => {
-  // Auto-open correct tab when there are server-side errors (POST back)
   const page = document.getElementById("dashboardPage");
   const errTab = page ? page.dataset.errTab : "";
   if (errTab) {
@@ -30,7 +25,6 @@ document.addEventListener("DOMContentLoaded", () => {
     switchTab(btn ? { currentTarget: btn } : null, errTab);
   }
 
-  // -- Password visibility toggles ---------------------------------------------
   document.querySelectorAll(".pass-toggle").forEach((btn) => {
     btn.addEventListener("click", () => {
       const input = document.getElementById(btn.dataset.target);
@@ -41,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // -- Auth page password toggle (login / signup) ------------------------------
   const toggleBtn = document.getElementById("togglePassword");
   const passInput = document.getElementById("password");
   if (toggleBtn && passInput) {

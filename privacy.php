@@ -2,7 +2,6 @@
 require_once "config/config.php";
 $title = "Privacy Policy | DriveEase";
 $page = "privacy";
-$css = "privacy";
 include "view/layout/header.php";
 ?>
 

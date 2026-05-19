@@ -1,7 +1,4 @@
-// -- admin.js ------------------------------------------------------------------
-
 document.addEventListener("DOMContentLoaded", () => {
-  // -- Toggle Add/Edit Vehicle form --------------------------------------------
   const addForm = document.getElementById("addVehicleForm");
 
   window.toggleAddForm = function () {
@@ -9,7 +6,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
     const isHidden = addForm.style.display === "none" || addForm.classList.contains("d-none");
     
-    // If opening, reset for Add
     if (isHidden) {
         const form = document.getElementById("vehicleForm");
         if (form) {
@@ -19,7 +15,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const vidInput = form.querySelector('[name="vehicle_id"]');
             if (vidInput) vidInput.remove();
         }
-        // Hide image preview when switching to Add mode
         const preview = document.getElementById("currentImagePreview");
         if (preview) preview.classList.add("d-none");
         
@@ -35,13 +30,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!addForm) return;
     const form = document.getElementById("vehicleForm");
     
-    // Change title
     addForm.querySelector("h3").textContent = "Edit Vehicle";
     
-    // Set inputs
     form.querySelector('[name="action"]').value = "edit_vehicle";
     
-    // Add vehicle_id hidden input if not exists
     let vidInput = form.querySelector('[name="vehicle_id"]');
     if (!vidInput) {
         vidInput = document.createElement("input");
@@ -51,18 +43,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     vidInput.value = vehicle.VehicleID;
     
-    // Populate fields
     if (form.querySelector('[name="name"]')) form.querySelector('[name="name"]').value = vehicle.Name || "";
     if (form.querySelector('[name="category"]')) form.querySelector('[name="category"]').value = vehicle.Category || "";
     if (form.querySelector('[name="type"]')) form.querySelector('[name="type"]').value = vehicle.Type || "";
     if (form.querySelector('[name="transmission"]')) form.querySelector('[name="transmission"]').value = vehicle.Transmission || "";
     if (form.querySelector('[name="daily_rate"]')) form.querySelector('[name="daily_rate"]').value = vehicle.DailyRate || "";
 
-    // Reset file input (can't programmatically set file inputs)
     const fileInput = form.querySelector('[name="image"]');
     if (fileInput) fileInput.value = "";
 
-    // Show current image preview if vehicle has an image
     const preview = document.getElementById("currentImagePreview");
     const thumb   = document.getElementById("currentImageThumb");
     if (preview && thumb) {
@@ -80,13 +69,11 @@ document.addEventListener("DOMContentLoaded", () => {
     window.scrollTo({ top: addForm.offsetTop - 50, behavior: 'smooth' });
   };
 
-  // Auto-open form if PHP flagged validation errors
   if (addForm && addForm.dataset.hasErrors === "1") {
     addForm.classList.remove("d-none");
     addForm.style.display = "block";
   }
 
-  // -- Live image preview when a new file is selected -------------------------
   const imgInput = document.getElementById("vehicleImageInput");
   if (imgInput) {
     imgInput.addEventListener("change", function () {
@@ -99,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
         reader.onload = function (e) {
           thumb.src = e.target.result;
           preview.classList.remove("d-none");
-          // Update label to "New Image:"
           const label = preview.querySelector("label");
           if (label) label.textContent = "New Image:";
         };
@@ -108,7 +94,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // -- Live table search -------------------------------------------------------
   window.filterTable = function (tableId, query) {
     const rows = document.querySelectorAll("#" + tableId + " tbody tr");
     query = query.toLowerCase();
@@ -119,7 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // -- Filter bookings by status -----------------------------------------------
   window.filterByStatus = function () {
     const statusEl = document.getElementById("statusFilter");
     const searchEl = document.getElementById("bookingSearch");
@@ -134,13 +118,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   };
 
-  // Wire up bookingSearch input to also trigger status filter
   const bookingSearch = document.getElementById("bookingSearch");
   if (bookingSearch) {
     bookingSearch.addEventListener("input", window.filterByStatus);
   }
 
-  // -- Confirm destructive actions ---------------------------------------------
   document.querySelectorAll(".confirm-delete").forEach((form) => {
     form.addEventListener("submit", (e) => {
       if (!confirm("Are you sure? This cannot be undone.")) e.preventDefault();

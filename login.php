@@ -99,7 +99,7 @@ include "view/layout/auth_header.php";
         <div class="form-group">
           <label for="email">Email Address</label>
           <div class="input-wrapper">
-            <input type="email" id="email" name="email" placeholder="name@domain.com"
+            <input type="email" id="email" name="email" placeholder="Enter your email"
                    value="<?= $old["email"] ?? "" ?>"
                    class="<?= isset($errors["email"]) ? "input-error" : "" ?>"
                    required autocomplete="email" />

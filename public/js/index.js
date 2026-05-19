@@ -7,7 +7,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let selectedType = "4-wheeler";
 
-  // Tab Switching
   tabs.forEach((tab) => {
     tab.addEventListener("click", () => {
       tabs.forEach((t) => t.classList.remove("active"));
@@ -17,7 +16,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  // Search Functionality
   if (searchBtn) {
     searchBtn.addEventListener("click", () => {
       const pickup = pickupInput.value.trim();
@@ -37,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const queryParams = new URLSearchParams({
         type: selectedType,
         pickup,
-        dropoff: pickup,
+        dropoff: travel,
         date,
         travel,
       });
@@ -46,7 +44,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Set default date to today
   if (dateInput) {
     const today = new Date().toISOString().split("T")[0];
     dateInput.setAttribute("min", today);

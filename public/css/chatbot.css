@@ -1,8 +1,6 @@
-/* ───────────────────────────────────────────
-   CHATBOT WIDGET — DriveEase
-─────────────────────────────────────────── */
+/* Chatbot widget - DriveEase */
 
-/* ── Floating toggle button ── */
+/* Floating toggle button */
 #chatbot-toggle {
   position: fixed;
   bottom: 2rem;
@@ -78,7 +76,7 @@
 
 #chatbot-toggle.open .cb-dot { opacity: 0; }
 
-/* ── Chat panel ── */
+/* Chat panel */
 #chatbot-panel {
   position: fixed;
   bottom: 6.5rem;
@@ -106,7 +104,7 @@
   pointer-events: all;
 }
 
-/* ── Panel header ── */
+/* Panel header */
 .cb-header {
   background: #0f1115;
   padding: 1.1rem 1.25rem;
@@ -189,7 +187,7 @@
   color: #fff;
 }
 
-/* ── Messages area ── */
+/* Messages area */
 .cb-messages {
   flex: 1;
   overflow-y: auto;
@@ -207,7 +205,7 @@
   border-radius: 4px;
 }
 
-/* ── Message bubbles ── */
+/* Message bubbles */
 .cb-msg {
   display: flex;
   gap: 0.5rem;
@@ -266,7 +264,7 @@
   stroke-linejoin: round;
 }
 
-/* ── Welcome card ── */
+/* Welcome card */
 .cb-welcome {
   background: linear-gradient(135deg, #f8faff 0%, #f0f4ff 100%);
   border: 1px solid #e0e8ff;
@@ -315,7 +313,7 @@
   transform: translateY(-1px);
 }
 
-/* ── Typing indicator ── */
+/* Typing indicator */
 .cb-typing {
   display: flex;
   gap: 0.5rem;
@@ -348,7 +346,7 @@
   30%           { transform: translateY(-6px); }
 }
 
-/* ── Input area ── */
+/* Input area */
 .cb-input-wrap {
   padding: 0.9rem 1rem;
   border-top: 1px solid #f3f4f6;
@@ -421,7 +419,7 @@
   stroke-linejoin: round;
 }
 
-/* ── Error state ── */
+/* Error state */
 .cb-error {
   font-size: 0.78rem;
   color: #ef4444;
@@ -431,7 +429,7 @@
   padding: 0.5rem 0.8rem;
 }
 
-/* ── Mobile responsive ── */
+/* Mobile responsive */
 @media (max-width: 480px) {
   #chatbot-panel {
     width: calc(100vw - 2rem);

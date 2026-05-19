@@ -33,13 +33,24 @@ class Vehicle
     /**
      * Get vehicles by category
      */
-    public function getByCategory(string $category): array
+    public function getByCategory(string $category, ?string $startDate = null, ?string $endDate = null): array
     {
-        $stmt = $this->db->prepare(
-            "SELECT * FROM Vehicles WHERE Category = ? AND IsAvailable = 1",
-        );
-        $stmt->execute([$category]);
-        $vehicles = $stmt->fetchAll();
+        $sql = "SELECT * FROM Vehicles WHERE Category = :cat AND IsAvailable = 1";
+        $params = [':cat' => $category];
+
+        if ($startDate && $endDate) {
+            $sql .= " AND VehicleID NOT IN (
+                SELECT VehicleID FROM Rentals
+                WHERE Status IN ('Pending', 'Confirmed', 'Active')
+                AND (StartDate <= :end_date AND EndDate >= :start_date)
+            )";
+            $params[':start_date'] = $startDate;
+            $params[':end_date'] = $endDate;
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $vehicles = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         $multiplier = $this->calculateCategoryMultiplier($category);
 
@@ -95,6 +106,15 @@ class Vehicle
         return $stmt->fetch() ?: null;
     }
 
+    public function findByIdForUpdate(int $id): ?array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT * FROM Vehicles WHERE VehicleID = ? FOR UPDATE",
+        );
+        $stmt->execute([$id]);
+        return $stmt->fetch() ?: null;
+    }
+
     /**
      * Search vehicles
      */
@@ -116,6 +136,16 @@ class Vehicle
         if (!empty($filters["transmission"])) {
             $sql .= " AND Transmission = ?";
             $params[] = $filters["transmission"];
+        }
+
+        if (!empty($filters["start_date"]) && !empty($filters["end_date"])) {
+            $sql .= " AND VehicleID NOT IN (
+                SELECT VehicleID FROM Rentals
+                WHERE Status IN ('Pending', 'Confirmed', 'Active')
+                AND (StartDate <= ? AND EndDate >= ?)
+            )";
+            $params[] = $filters["end_date"];
+            $params[] = $filters["start_date"];
         }
 
         $stmt = $this->db->prepare($sql);

@@ -22,9 +22,9 @@ class VehicleController
         return $this->vehicleModel->getAvailable();
     }
 
-    public function getByCategory(string $cat): array
+    public function getByCategory(string $cat, ?string $startDate = null, ?string $endDate = null): array
     {
-        return $this->vehicleModel->getByCategory($cat);
+        return $this->vehicleModel->getByCategory($cat, $startDate, $endDate);
     }
 
     public function addVehicle(array $data, array $fileInput): array

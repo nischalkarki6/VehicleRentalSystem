@@ -22,15 +22,22 @@ require_once __DIR__ . '/config/config.php';
 $apiKey   = getenv('GROQ_API_KEY') ?: ($_ENV['GROQ_API_KEY'] ?? '');
 $endpoint = 'https://api.groq.com/openai/v1/chat/completions';
 
+if ($apiKey === '') {
+    http_response_code(500);
+    echo json_encode(['error' => 'Chatbot API key is not configured.']);
+    exit;
+}
+
 $history  = isset($input['history']) && is_array($input['history']) ? $input['history'] : [];
 $userMsg  = trim($input['message']);
 
 $messages = [];
 
-// System context
 $systemPrompt = "You are a helpful assistant for DriveEase, a premium vehicle rental company in Nepal. "
     . "You help customers with vehicle bookings, pricing, fleet information, travel tips in Nepal, "
     . "and general support. Be friendly, concise, and professional. "
+    . "When helping with a booking, collect the needed booking details, summarize them, and ask the customer to confirm. "
+    . "If the customer says yes, ask one final second confirmation before treating the booking as confirmed or directing them to complete it. "
     . "If asked about something unrelated to vehicle rental or travel, politely redirect the conversation.";
 
 $messages[] = [

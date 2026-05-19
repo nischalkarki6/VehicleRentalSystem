@@ -1,21 +1,19 @@
 <?php
 require_once __DIR__ . "/../config/config.php";
+require_once __DIR__ . "/../helpers/mail_helper.php";
 require_once __DIR__ . "/../models/User.php";
 
 class AuthController
 {
     private User $userModel;
+    private PDO $pdo;
 
     public function __construct(PDO $pdo)
     {
+        $this->pdo = $pdo;
         $this->userModel = new User($pdo);
     }
 
-    /**
-     * Register a new user.
-     * Account is NOT active until the email is verified.
-     * A verification email is sent via PHPMailer SMTP.
-     */
     public function register(array $data): array
     {
         $errors = $this->validateRegistration($data);
@@ -23,7 +21,6 @@ class AuthController
             return ["success" => false, "errors" => $errors];
         }
 
-        // Check if email exists
         $existing = $this->userModel->findByEmail($data["email"]);
         if ($existing) {
             return [
@@ -68,11 +65,6 @@ class AuthController
         ];
     }
 
-    // -- Email Verification ---------------------------------------------------
-
-    /**
-     * Verify a user's email using a one-time code.
-     */
     public function verifyEmail(string $email, string $otp): array
     {
         $tokenHash = hash('sha256', $otp);
@@ -95,12 +87,8 @@ class AuthController
         ];
     }
 
-    /**
-     * Resend verification code.
-     */
     public function resendVerification(string $email): array
     {
-        // Always return success-like message to prevent user enumeration
         $genericMessage = "If that email is registered and unverified, a new verification code has been sent.";
 
         $user = $this->userModel->findByEmail($email);
@@ -123,111 +111,147 @@ class AuthController
         return ["success" => true, "message" => $genericMessage];
     }
 
-    // -- Password Reset -------------------------------------------------------
-
-    /**
-     * Request a password reset. Sends reset email if user exists.
-     * IMPORTANT: Never reveals whether the email exists (prevents enumeration).
-     */
-    public function requestPasswordReset(string $email): array
+    public function generatePasswordResetOtp(): string
     {
-        $genericMessage = "If an account with that email exists, a password reset link has been sent.";
+        return (string) random_int(100000, 999999);
+    }
 
-        $user = $this->userModel->findByEmail($email);
-        if (!$user) {
-            // Don't reveal that the user doesn't exist
+    public function requestPasswordResetOtp(string $email): array
+    {
+        $genericMessage = "If an account with that email exists, a password reset code has been sent.";
+        $email = strtolower(trim($email));
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return ["success" => true, "message" => $genericMessage];
         }
 
-        $rawToken  = bin2hex(random_bytes(32));
-        $tokenHash = hash('sha256', $rawToken);
+        $user = $this->userModel->findByEmail($email);
+        if (!$user) {
+            return ["success" => true, "message" => $genericMessage];
+        }
 
-        $this->userModel->createPasswordReset($user["UserID"], $tokenHash);
+        $otp = $this->generatePasswordResetOtp();
+        $otpHash = password_hash($otp, PASSWORD_BCRYPT, ["cost" => 12]);
+
+        if (!$this->userModel->createPasswordResetOtp($user["UserID"], $otpHash, 10)) {
+            return [
+                "success" => false,
+                "message" => "Unable to create password reset code. Please try again.",
+            ];
+        }
 
         $emailHandler = new EmailHandler();
-        $sent = $emailHandler->sendPasswordResetEmail(
+        $sent = $emailHandler->sendPasswordResetOtpEmail(
             $user["Email"],
             $user["FullName"],
-            $rawToken
+            $otp
         );
 
         if (!$sent) {
-            $link = buildAppUrl('reset_password.php?token=' . urlencode($rawToken));
-            error_log('[AuthController] Reset link (email failed): ' . $link);
+            error_log('[AuthController] Password reset OTP for ' . $user["Email"] . ': ' . $otp);
         }
 
         return ["success" => true, "message" => $genericMessage];
     }
 
-    /**
-     * Validate a reset token (check if it's valid and not expired).
-     */
-    public function validateResetToken(string $rawToken): array
+    public function verifyPasswordResetOtp(string $email, string $otp): array
     {
-        $tokenHash = hash('sha256', $rawToken);
-        $reset = $this->userModel->findPasswordReset($tokenHash);
+        $email = strtolower(trim($email));
+        $otp = trim($otp);
 
-        if (!$reset) {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !preg_match('/^\d{6}$/', $otp)) {
             return [
                 "success" => false,
-                "error"   => "Invalid or expired reset link. Please request a new one.",
+                "error" => "Invalid or expired reset code. Please request a new one.",
             ];
         }
 
-        return ["success" => true, "reset" => $reset];
-    }
-
-    /**
-     * Complete the password reset: validate token, hash new password, save.
-     */
-    public function resetPassword(string $rawToken, string $newPassword, string $confirmPassword): array
-    {
-        // Validate token
-        $validation = $this->validateResetToken($rawToken);
-        if (!$validation["success"]) {
-            return $validation;
+        $reset = $this->userModel->consumePasswordResetOtp($email, $otp);
+        if (!$reset) {
+            return [
+                "success" => false,
+                "error" => "Invalid or expired reset code. Please request a new one.",
+            ];
         }
 
-        // Validate new password
+        $_SESSION["password_reset_user_id"] = (int) $reset["UserID"];
+        $_SESSION["password_reset_verified_at"] = time();
+        $_SESSION["password_reset_expires_at"] = time() + 600;
+        $_SESSION["password_reset_nonce"] = bin2hex(random_bytes(32));
+
+        return [
+            "success" => true,
+            "show_reset_modal" => true,
+            "reset_session_token" => $_SESSION["password_reset_nonce"],
+            "message" => "Reset code verified.",
+        ];
+    }
+
+    public function completePasswordResetOtp(
+        string $sessionToken,
+        string $newPassword,
+        string $confirmPassword
+    ): array {
+        $resetUserId = (int) ($_SESSION["password_reset_user_id"] ?? 0);
+        $resetExpiresAt = (int) ($_SESSION["password_reset_expires_at"] ?? 0);
+        $resetNonce = $_SESSION["password_reset_nonce"] ?? "";
+
+        if (
+            $resetUserId <= 0 ||
+            $resetExpiresAt < time() ||
+            $resetNonce === "" ||
+            !hash_equals($resetNonce, $sessionToken)
+        ) {
+            $this->clearPasswordResetSession();
+            return [
+                "success" => false,
+                "error" => "Password reset session expired. Please verify a new code.",
+            ];
+        }
+
         if (strlen($newPassword) < 8) {
             return [
                 "success" => false,
-                "error"   => "Password must be at least 8 characters.",
+                "error" => "Password must be at least 8 characters.",
             ];
         }
 
         if (!preg_match("/[A-Z]/", $newPassword) || !preg_match("/[0-9]/", $newPassword)) {
             return [
                 "success" => false,
-                "error"   => "Password must contain at least one uppercase letter and one number.",
+                "error" => "Password must contain at least one uppercase letter and one number.",
             ];
         }
 
         if ($newPassword !== $confirmPassword) {
             return [
                 "success" => false,
-                "error"   => "Passwords do not match.",
+                "error" => "Passwords do not match.",
             ];
         }
 
-        $reset = $validation["reset"];
         $hashedPassword = password_hash($newPassword, PASSWORD_BCRYPT, ["cost" => 12]);
-
-        if ($this->userModel->resetPassword($reset["ResetID"], $reset["UserID"], $hashedPassword)) {
-            return ["success" => true];
+        if (!$this->userModel->updatePassword($resetUserId, $hashedPassword)) {
+            return [
+                "success" => false,
+                "error" => "Password reset failed. Please try again.",
+            ];
         }
 
-        return [
-            "success" => false,
-            "error"   => "Password reset failed. Please try again.",
-        ];
+        $this->clearPasswordResetSession();
+        return ["success" => true, "message" => "Password updated successfully."];
     }
 
-    // -- Login ----------------------------------------------------------------
+    private function clearPasswordResetSession(): void
+    {
+        unset(
+            $_SESSION["password_reset_user_id"],
+            $_SESSION["password_reset_verified_at"],
+            $_SESSION["password_reset_expires_at"],
+            $_SESSION["password_reset_nonce"]
+        );
+    }
 
-    /**
-     * Validate credentials and start an authenticated session.
-     */
     public function login(string $email, string $password): array
     {
         $user = $this->userModel->findByEmail($email);
@@ -246,7 +270,6 @@ class AuthController
             ];
         }
 
-        // Check if email is verified
         if (($user["Role"] ?? "") !== "admin" && isset($user["IsVerified"]) && !$user["IsVerified"]) {
             return [
                 "success"    => false,
@@ -264,13 +287,6 @@ class AuthController
         return ["success" => true, "role" => $user["Role"]];
     }
 
-    // -------------------------------------------------------------------------
-    // Profile Management
-    // -------------------------------------------------------------------------
-
-    /**
-     * Update user profile
-     */
     public function updateProfile(int $userId, array $data): array
     {
         $errors = $this->validateProfile($data);
@@ -286,9 +302,6 @@ class AuthController
         return ["success" => false, "errors" => ["form" => "Update failed."]];
     }
 
-    /**
-     * Change user password
-     */
     public function changePassword(
         int $userId,
         string $current,
@@ -331,7 +344,6 @@ class AuthController
             ];
         }
 
-        // Prevent reusing the current password
         if (password_verify($new, $user["Password"])) {
             return [
                 "success" => false,

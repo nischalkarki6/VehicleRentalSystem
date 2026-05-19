@@ -21,8 +21,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         $rentalId = (int) ($_POST["rental_id"] ?? 0);
         $status = $_POST["status"] ?? "";
         if ($rentalId > 0) {
-            $bookCtrl->updateStatus($rentalId, $status);
-            setFlash("success", "Booking #$rentalId updated to $status.");
+            if ($bookCtrl->updateStatus($rentalId, $status)) {
+                setFlash("success", "Booking #$rentalId updated to $status.");
+            } else {
+                setFlash("error", "Unable to update booking #$rentalId.");
+            }
         }
         $tab = $_POST["tab"] ?? "bookings";
         redirect("admin.php?tab=" . urlencode($tab));
@@ -77,17 +80,17 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         redirect("admin.php?tab=messages");
     }
 
-    // Delete vehicle (only if no pending/active bookings)
+    // Delete vehicle only if no in-flight or active bookings exist.
     if ($action === "delete_vehicle") {
         $vid = (int) $_POST["vehicle_id"];
         $chk = $pdo->prepare(
-            "SELECT COUNT(*) FROM Rentals WHERE VehicleID = ? AND Status IN ('Pending','Active')",
+            "SELECT COUNT(*) FROM Rentals WHERE VehicleID = ? AND Status IN ('Pending','Confirmed','Active')",
         );
         $chk->execute([$vid]);
         if ($chk->fetchColumn() > 0) {
             setFlash(
                 "error",
-                "Cannot delete: vehicle has pending or active bookings.",
+                "Cannot delete: vehicle has pending, confirmed, or active bookings.",
             );
         } else {
             $vehCtrl->deleteVehicle($vid);
@@ -114,13 +117,13 @@ $totalRevenue = array_sum(
     array_column(
         array_filter(
             $allBookings,
-            fn($b) => in_array($b["Status"], ["Active", "Completed"]),
+            fn($b) => in_array($b["Status"], ["Confirmed", "Active", "Completed"]),
         ),
         "TotalCost",
     ),
 );
 $pendingCount = count(
-    array_filter($allBookings, fn($b) => $b["Status"] === "Pending"),
+    array_filter($allBookings, fn($b) => $b["Status"] === "Confirmed" && $b["PaymentStatus"] === "Paid"),
 );
 $activeCount = count(
     array_filter($allBookings, fn($b) => $b["Status"] === "Active"),
@@ -217,7 +220,7 @@ include "view/layout/header.php";
         <div class="stat-card">
           <span class="material-symbols-outlined stat-icon stat-icon-orange">pending</span>
           <div class="stat-value"><?= $pendingCount ?></div>
-          <div class="stat-label">Pending Approval</div>
+          <div class="stat-label">Awaiting Activation</div>
         </div>
         <div class="stat-card">
           <span class="material-symbols-outlined stat-icon stat-icon-green">check_circle</span>
@@ -249,7 +252,7 @@ include "view/layout/header.php";
       <div class="orders-table-wrapper">
         <table class="orders-table">
           <thead>
-            <tr><th>ID</th><th>User</th><th>Vehicle</th><th>Amount</th><th>Status</th><th>Action</th></tr>
+            <tr><th>ID</th><th>User</th><th>Vehicle</th><th>Amount</th><th>Payment</th><th>Status</th><th>Action</th></tr>
           </thead>
           <tbody>
             <?php foreach (array_slice($allBookings, 0, 8) as $b): ?>
@@ -258,18 +261,21 @@ include "view/layout/header.php";
               <td><?= htmlspecialchars($b["UserName"]) ?></td>
               <td><?= htmlspecialchars($b["VehicleName"]) ?></td>
               <td>NPR <?= number_format($b["TotalCost"], 2) ?></td>
+              <td>
+                <small><b><?= $b["PaymentMethod"] ?? "Cash" ?></b>:<br><span class="<?= strtolower($b["PaymentStatus"] ?? "unpaid") === 'paid' ? 'text-success' : 'text-warning' ?>"><?= $b["PaymentStatus"] ?? "Unpaid" ?></span></small>
+              </td>
               <td><span class="status-badge status-<?= strtolower(
                   $b["Status"],
               ) ?>"><?= $b["Status"] ?></span></td>
               <td>
-                <?php if ($b["Status"] === "Pending"): ?>
+                <?php if ($b["Status"] === "Confirmed"): ?>
                   <form method="POST" class="d-inline-block">
                     <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                     <input type="hidden" name="action"    value="update_booking_status">
                     <input type="hidden" name="rental_id" value="<?= $b["RentalID"] ?>">
                     <input type="hidden" name="status"    value="Active">
                     <input type="hidden" name="tab"       value="overview">
-                    <button type="submit" class="btn-xs btn-approve">Approve</button>
+                    <button type="submit" class="btn-xs btn-approve">Activate</button>
                   </form>
                   <form method="POST" class="d-inline-block">
                     <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
@@ -277,7 +283,7 @@ include "view/layout/header.php";
                     <input type="hidden" name="rental_id" value="<?= $b["RentalID"] ?>">
                     <input type="hidden" name="status"    value="Cancelled">
                     <input type="hidden" name="tab"       value="overview">
-                    <button type="submit" class="btn-xs btn-reject">Reject</button>
+                    <button type="submit" class="btn-xs btn-reject">Cancel</button>
                   </form>
                 <?php else: ?>
                   <span class="text-muted-alt font-sm">-</span>
@@ -302,7 +308,7 @@ include "view/layout/header.php";
         <select id="statusFilter" class="dash-input w-max-160"
                 onchange="filterByStatus()">
           <option value="">All Statuses</option>
-          <option>Pending</option><option>Active</option>
+          <option>Confirmed</option><option>Active</option>
           <option>Completed</option><option>Cancelled</option>
         </select>
       </div>
@@ -313,7 +319,7 @@ include "view/layout/header.php";
             <tr>
               <th>#</th><th>User</th><th>Vehicle</th>
               <th>Duration</th><th>Pickup -> Destination</th>
-              <th>Amount (NPR)</th><th>Status</th><th>Actions</th>
+              <th>Amount (NPR)</th><th>Payment</th><th>Status</th><th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -343,11 +349,14 @@ include "view/layout/header.php";
                 ) ?></small>
               </td>
               <td><strong><?= number_format($b["TotalCost"], 2) ?></strong></td>
+              <td>
+                <small><b><?= $b["PaymentMethod"] ?? "Cash" ?></b>:<br><span class="<?= strtolower($b["PaymentStatus"] ?? "unpaid") === 'paid' ? 'text-success' : 'text-warning' ?>"><?= $b["PaymentStatus"] ?? "Unpaid" ?></span></small>
+              </td>
               <td><span class="status-badge status-<?= strtolower(
                   $b["Status"],
               ) ?>"><?= $b["Status"] ?></span></td>
               <td class="action-btns">
-                <?php if ($b["Status"] === "Pending"): ?>
+                <?php if ($b["Status"] === "Confirmed"): ?>
                   <form method="POST">
                     <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                     <input type="hidden" name="action"    value="update_booking_status">
@@ -355,18 +364,20 @@ include "view/layout/header.php";
                         "RentalID"
                     ] ?>">
                     <input type="hidden" name="status"    value="Active">
-                    <button type="submit" class="btn-xs btn-approve"><span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle; margin-right:2px;">check</span> Approve</button>
+                    <button type="submit" class="btn-xs btn-approve"><span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle; margin-right:2px;">check</span> Activate</button>
                   </form>
                   <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                     <input type="hidden" name="action"    value="update_booking_status">
                     <input type="hidden" name="rental_id" value="<?= $b[
                         "RentalID"
                     ] ?>">
                     <input type="hidden" name="status"    value="Cancelled">
-                    <button type="submit" class="btn-xs btn-reject"><span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle; margin-right:2px;">close</span> Reject</button>
+                    <button type="submit" class="btn-xs btn-reject"><span class="material-symbols-outlined" style="font-size:14px; vertical-align:middle; margin-right:2px;">close</span> Cancel</button>
                   </form>
                 <?php elseif ($b["Status"] === "Active"): ?>
                   <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
                     <input type="hidden" name="action"    value="update_booking_status">
                     <input type="hidden" name="rental_id" value="<?= $b[
                         "RentalID"

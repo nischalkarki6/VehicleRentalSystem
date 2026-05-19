@@ -4,75 +4,164 @@ require_once "controllers/VehicleController.php";
 
 $vehCtrl = new VehicleController($pdo);
 
-// Get search params
-$category =
-    isset($_GET["type"]) && $_GET["type"] === "2-wheeler" ? "Bike" : "Car";
-$pickup = $_GET["pickup"] ?? "";
-$date = $_GET["date"] ?? "";
+// Accept both direct category links and homepage search tab values.
+$requestedCategory = $_GET["category"] ?? "";
+$requestedType = $_GET["type"] ?? "";
 
-// Search based on category
-$vehicles = $vehCtrl->getByCategory($category);
+if ($requestedType === "4-wheeler") {
+    $category = "Car";
+} elseif ($requestedType === "2-wheeler") {
+    $category = "Bike";
+} else {
+    $category = $requestedCategory ?: "Bike";
+}
 
-$title = "Search Results | DriveEase";
-$page = "search";
-$css = "search"; // Using search styles for this page
+if (!in_array($category, ["Car", "Bike"], true)) {
+    $category = "Bike";
+}
+
+$searchContext = [];
+if (!empty($_GET["pickup"])) {
+    $searchContext["pickup"] = trim($_GET["pickup"]);
+}
+
+$destination = $_GET["travel"] ?? $_GET["destination"] ?? $_GET["dropoff"] ?? "";
+if (!empty($destination)) {
+    $searchContext["travel"] = trim($destination);
+}
+if (!empty($_GET["date"])) {
+    $searchContext["start_date"] = trim($_GET["date"]);
+}
+if (!empty($_GET["start_date"])) {
+    $searchContext["start_date"] = trim($_GET["start_date"]);
+}
+if (!empty($_GET["end_date"])) {
+    $searchContext["end_date"] = trim($_GET["end_date"]);
+}
+
+$vehicles = $vehCtrl->getByCategory($category, $searchContext["start_date"] ?? null, $searchContext["end_date"] ?? null);
+
+$toggleContext = [];
+foreach (["pickup", "travel", "destination", "dropoff", "date", "start_date", "end_date"] as $param) {
+    if (!empty($_GET[$param])) {
+        $toggleContext[$param] = trim($_GET[$param]);
+    }
+}
+$carToggleUrl = "search.php?" . http_build_query(array_merge($toggleContext, ["type" => "4-wheeler"]));
+$bikeToggleUrl = "search.php?" . http_build_query(array_merge($toggleContext, ["type" => "2-wheeler"]));
+
+$title = "Available " . ($category === "Car" ? "Four Wheelers" : "Two Wheelers") . " | DriveEase";
+$page = "fleet";
+$css = "fleet";
+$js = "fleet";
 include "view/layout/header.php";
 ?>
 
-<main class="page-container container">
-  <div class="page-header">
-    <h1>Search Results</h1>
-    <p>Available <?= strtolower(
-        $category,
-    ) ?>s for your trip starting <?= htmlspecialchars(
-    $date,
-) ?> from <?= htmlspecialchars($pickup) ?>.</p>
+<main class="search-container container">
+  <!-- Header Area -->
+  <div class="search-header">
+    <div class="search-title-left">
+      <span class="search-label">SEARCH RESULTS</span>
+      <h1>Available <?= $category === "Car" ? "Four Wheelers" : "Two Wheelers" ?></h1>
+      <?php 
+        $displayPickup = $_GET['pickup'] ?? 'Kathmandu Valley';
+        $displayDate = $_GET['date'] ?? date('F jS, Y');
+      ?>
+      <div class="search-params">
+        <span class="material-symbols-outlined">calendar_today</span> <?= htmlspecialchars($displayDate) ?>
+        <span class="dot">.</span>
+        <span class="material-symbols-outlined">location_on</span> <?= htmlspecialchars($displayPickup) ?>
+        <a href="index.php" class="change-link">Change</a>
+      </div>
+    </div>
+    
+    <div class="vehicle-toggle">
+      <a href="<?= htmlspecialchars($carToggleUrl) ?>" class="toggle-btn <?= $category === "Car" ? "active" : "" ?>">Four Wheelers</a>
+      <a href="<?= htmlspecialchars($bikeToggleUrl) ?>" class="toggle-btn <?= $category === "Bike" ? "active" : "" ?>">Two Wheelers</a>
+    </div>
   </div>
 
-  <div class="v-grid">
-    <?php if (empty($vehicles)): ?>
-      <div class="text-center" style="grid-column: 1 / -1; padding: 4rem;">
-        <p class="text-muted mb-15">No <?= strtolower($category) ?>s available for the selected criteria.</p>
-        <a href="fleet.php" class="btn-primary">View All Fleet</a>
+  <div class="search-layout">
+    <!-- Filters Sidebar -->
+    <aside class="filters-sidebar">
+      <div class="filter-group">
+        <span class="filter-title">PRICE RANGE (DAILY)</span>
+        <div class="price-slider-track">
+          <input type="range" id="priceRange" min="5000" max="15000" step="500" value="5000">
+        </div>
+        <div class="price-labels">
+          <span>Show all</span>
+          <span id="priceLabelOut">Show all</span>
+        </div>
       </div>
-    <?php else: ?>
-      <?php foreach ($vehicles as $v): ?>
-        <div class="v-card">
-          <div class="v-card-img" style="background-image: url('<?= htmlspecialchars($v["ImageURL"] ?: "https://via.placeholder.com/400x240?text=No+Image") ?>');"></div>
-          <div class="v-card-body">
-            <div class="v-card-header">
-              <div class="v-card-tags">
-                <span class="v-card-tag available">Available</span>
-                <span class="v-card-tag type"><?= htmlspecialchars($v["Type"] ?: $v["Category"]) ?></span>
-                <?php if (!empty($v["IsDynamicPrice"])): ?>
-                  <span class="v-card-tag" style="background: #fff0f0; color: #d32f2f;">Surge</span>
+
+      <?php if ($category === "Bike"): ?>
+        <button class="btn-reset">RESET FILTERS</button>
+      <?php else: ?>
+        <div class="need-help-card">
+          <h4>Need Help?</h4>
+          <p>Our mobility experts are available 24/7 for tailored bookings.</p>
+          <button class="btn-contact-support">Contact Support</button>
+        </div>
+      <?php endif; ?>
+    </aside>
+
+    <!-- Results Grid -->
+    <div>
+      <div class="v-grid">
+        <?php if (empty($vehicles)): ?>
+          <div class="empty-results">No vehicles available in this category.</div>
+        <?php else: ?>
+          <?php foreach ($vehicles as $v): ?>
+            <?php
+              $bookingUrl = "bookings.php?" . http_build_query(array_merge(
+                  ["vehicle_id" => $v["VehicleID"]],
+                  $searchContext,
+              ));
+            ?>
+            <div class="v-card filterable-card" data-transmission="<?= htmlspecialchars($v["Transmission"]) ?>" data-price="<?= $v["DailyRate"] ?>">
+              <div class="v-card-img">
+                <img src="<?= htmlspecialchars($v["ImageURL"] ?: "https://via.placeholder.com/400x240?text=No+Image") ?>"
+                     alt="<?= htmlspecialchars($v["Name"]) ?>">
+              </div>
+              <div class="v-card-body">
+                <div class="v-card-header">
+                  <div class="v-card-tags">
+                    <span class="v-card-tag available">Available</span>
+                    <span class="v-card-tag type"><?= htmlspecialchars($v["Type"] ?: $v["Category"]) ?></span>
+                    <?php if (!empty($v["IsDynamicPrice"])): ?>
+                      <span class="v-card-tag v-card-tag--surge">Surge</span>
+                    <?php endif; ?>
+                  </div>
+                  <div class="v-card-price">
+                    Rs. <?= number_format($v["DailyRate"], 0) ?>
+                    <small>/ day</small>
+                  </div>
+                </div>
+                
+                <h3><?= htmlspecialchars($v["Name"]) ?></h3>
+                
+                <div class="v-card-specs">
+                  <span><span class="material-symbols-outlined">settings</span> <?= strtoupper(htmlspecialchars($v["Transmission"])) ?></span>
+                </div>
+                
+                <?php if (isset($_SESSION["user_id"])): ?>
+                  <a href="<?= htmlspecialchars($bookingUrl) ?>" class="btn-book">BOOK NOW</a>
+                <?php else: ?>
+                  <a href="login.php?redirect=<?= urlencode($bookingUrl) ?>" class="btn-book">LOGIN TO BOOK</a>
                 <?php endif; ?>
               </div>
-              <div class="v-card-price">
-                Rs. <?= number_format($v["DailyRate"], 0) ?>
-                <small>/ day</small>
-              </div>
             </div>
-            <h3><?= htmlspecialchars($v["Name"]) ?></h3>
-            <div class="v-card-specs">
-              <span><span class="material-symbols-outlined">settings</span> <?= strtoupper(htmlspecialchars($v["Transmission"])) ?></span>
-            </div>
-            <?php 
-              $bookUrl = "bookings.php?vehicle_id=" . $v["VehicleID"] . 
-                         "&start_date=" . urlencode($date) . 
-                         "&pickup=" . urlencode($pickup) . 
-                         "&dropoff=" . urlencode($_GET['dropoff'] ?? $pickup) . 
-                         "&travel=" . urlencode($_GET['travel'] ?? $pickup);
-            ?>
-            <?php if (isset($_SESSION["user_id"])): ?>
-              <button class="btn-book" onclick="window.location.href='<?= $bookUrl ?>'">Book Now</button>
-            <?php else: ?>
-              <a href="login.php?redirect=<?= urlencode($bookUrl) ?>" class="btn-book">Login to Book</a>
-            <?php endif; ?>
-          </div>
-        </div>
-      <?php endforeach; ?>
-    <?php endif; ?>
+          <?php endforeach; ?>
+        <?php endif; ?>
+      </div>
+      
+      <?php if (!empty($vehicles)): ?>
+      <div class="load-more-container">
+        <p class="showing-text">Showing all <?= count($vehicles) ?> available <?= strtolower($category === "Car" ? "four wheelers" : "two wheelers") ?></p>
+      </div>
+      <?php endif; ?>
+    </div>
   </div>
 </main>
 

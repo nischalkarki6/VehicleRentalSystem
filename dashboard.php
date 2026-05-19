@@ -73,7 +73,9 @@ $stmt->execute([$userId]);
 $user = $stmt->fetch();
 
 if (!$user) {
-    die("User not found.");
+    session_unset();
+    session_destroy();
+    redirect("login.php");
 }
 
 $rentals = $booking->getUserBookings($userId);
@@ -328,9 +330,9 @@ include "view/layout/header.php";
       <?php if (empty($rentals)): ?>
         <div class="empty-state">
           <span class="material-symbols-outlined">car_rental</span>
-          <p>No rentals found.</p>
+          <p>No completed bookings yet.</p>
           <a href="fleet.php" class="btn-primary mt-1">
-            Browse Fleet
+            Book a Vehicle
           </a>
         </div>
       <?php else: ?>
@@ -343,8 +345,8 @@ include "view/layout/header.php";
                 <th>Duration</th>
                 <th>Pickup -> Destination</th>
                 <th>Total (NPR)</th>
+                <th>Payment</th>
                 <th>Status</th>
-                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -377,23 +379,17 @@ include "view/layout/header.php";
                     2,
                 ) ?></strong></td>
                 <td>
+                  <span class="status-badge status-paid">
+                    <span class="material-symbols-outlined" style="font-size:14px;vertical-align:middle">verified</span>
+                    Paid via eSewa
+                  </span>
+                </td>
+                <td>
                   <span class="status-badge status-<?= strtolower(
                       $r["Status"],
                   ) ?>">
                     <?= htmlspecialchars($r["Status"]) ?>
                   </span>
-                </td>
-                <td class="action-btns">
-                  <?php if ($r["Status"] === "Pending"): ?>
-                    <form method="POST" onsubmit="return confirm('Cancel this booking?')">
-                      <input type="hidden" name="csrf_token" value="<?= generateCsrfToken() ?>">
-                      <input type="hidden" name="action" value="cancel_booking">
-                      <input type="hidden" name="rental_id" value="<?= $r["RentalID"] ?>">
-                      <button type="submit" class="btn-xs btn-reject">Cancel</button>
-                    </form>
-                  <?php else: ?>
-                    <span style="color:#666;font-size:0.8rem">-</span>
-                  <?php endif; ?>
                 </td>
               </tr>
               <?php endforeach; ?>

@@ -456,3 +456,322 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Terms & Conditions Modal */
+.tnc-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 10, 15, 0.65);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.tnc-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
+.tnc-modal {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+  width: 100%;
+  max-width: 620px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  transform: translateY(30px) scale(0.97);
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.tnc-overlay.active .tnc-modal {
+  transform: translateY(0) scale(1);
+}
+
+.tnc-modal-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.1rem;
+  padding: 1.75rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tnc-header-icon {
+  background-color: var(--black);
+  color: var(--surface);
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 2px;
+}
+
+.tnc-header-icon .material-symbols-outlined {
+  font-size: 1.3rem;
+}
+
+.tnc-header-text {
+  flex: 1;
+}
+
+.tnc-header-text h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--black);
+  letter-spacing: -0.3px;
+  margin-bottom: 0.2rem;
+}
+
+.tnc-header-text p {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.tnc-close-btn {
+  background: var(--gray-bg);
+  border: 1px solid var(--border);
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color var(--duration) var(--ease), border-color var(--duration) var(--ease);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.tnc-close-btn:hover {
+  background: var(--black);
+  color: var(--surface);
+  border-color: var(--black);
+}
+
+.tnc-close-btn .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.tnc-body {
+  padding: 0 2rem 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.tnc-scroll {
+  padding: 1.5rem 0 0.5rem;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 1.25rem;
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.tnc-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.tnc-scroll::-webkit-scrollbar-track {
+  background: var(--gray-bg);
+  border-radius: 99px;
+}
+
+.tnc-scroll::-webkit-scrollbar-thumb {
+  background: var(--gray-light);
+  border-radius: 99px;
+}
+
+.tnc-scroll h3 {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--black);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 1.25rem 0 0.4rem;
+}
+
+.tnc-scroll h3:first-child {
+  margin-top: 0;
+}
+
+.tnc-scroll p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.7;
+  margin: 0;
+}
+
+.tnc-agreement {
+  padding: 0.25rem 0 0.5rem;
+}
+
+.tnc-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  user-select: none;
+}
+
+.tnc-checkbox-label input[type="checkbox"] {
+  display: none;
+}
+
+.tnc-checkmark {
+  width: 22px;
+  height: 22px;
+  min-width: 22px;
+  background: var(--gray-bg);
+  border: 2px solid var(--gray-light);
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--duration) var(--ease);
+}
+
+.tnc-checkmark .material-symbols-outlined {
+  font-size: 0.95rem;
+  color: var(--surface);
+  opacity: 0;
+  transform: scale(0.5);
+  transition: all 0.2s ease;
+}
+
+.tnc-checkbox-label input:checked ~ .tnc-checkmark,
+.tnc-checkbox-label.checked .tnc-checkmark {
+  background: var(--black);
+  border-color: var(--black);
+}
+
+.tnc-checkbox-label input:checked ~ .tnc-checkmark .material-symbols-outlined,
+.tnc-checkbox-label.checked .tnc-checkmark .material-symbols-outlined {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.tnc-link {
+  color: var(--black);
+  font-weight: 700;
+  text-underline-offset: 2px;
+}
+
+.tnc-link:hover {
+  opacity: 0.7;
+}
+
+.tnc-error {
+  font-size: 0.78rem;
+  color: #b91c1c;
+  margin-top: 0.6rem;
+  min-height: 1.1em;
+  font-weight: 600;
+}
+
+.tnc-footer {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1.25rem 2rem 1.75rem;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.tnc-btn-cancel {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1rem;
+  background: var(--gray-bg);
+  color: var(--text-dark);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+}
+
+.tnc-btn-cancel:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+
+.tnc-btn-cancel .material-symbols-outlined {
+  font-size: 1.05rem;
+}
+
+.tnc-btn-confirm {
+  flex: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.9rem 1.25rem;
+  background: var(--black);
+  color: var(--surface);
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all var(--duration) var(--ease);
+}
+
+.tnc-btn-confirm:hover {
+  background: #2a2d33;
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.tnc-btn-confirm:active {
+  transform: translateY(0);
+}
+
+.tnc-btn-confirm .material-symbols-outlined {
+  font-size: 1.05rem;
+}
+
+@media (max-width: 600px) {
+  .tnc-modal-header {
+    padding: 1.25rem 1.25rem 1rem;
+  }
+  .tnc-body {
+    padding: 0 1.25rem 1rem;
+  }
+  .tnc-footer {
+    flex-direction: column;
+    padding: 1rem 1.25rem 1.5rem;
+  }
+  .tnc-btn-confirm {
+    flex: unset;
+  }
+  .tnc-btn-cancel {
+    flex: unset;
+  }
+  .tnc-scroll {
+    max-height: 200px;
+  }
+}

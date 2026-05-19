@@ -1,15 +1,12 @@
 (() => {
-  /* ── Constants ── */
   const ENDPOINT = 'chatbot.php';
   const STORAGE_KEY = 'driveease_chat_history';
 
-  /* ── State ── */
   let history = [];
   let isOpen = false;
   let isTyping = false;
   let hasGreeted = false;
 
-  /* ── DOM Refs ── */
   const toggle  = document.getElementById('chatbot-toggle');
   const panel   = document.getElementById('chatbot-panel');
   const closeBtn = document.getElementById('cb-close');
@@ -17,9 +14,8 @@
   const input   = document.getElementById('chatbot-input');
   const sendBtn = document.getElementById('chatbot-send');
 
-  if (!toggle || !panel) return; // guard if not rendered
+  if (!toggle || !panel) return;
 
-  /* ── Toggle panel open/close ── */
   function openPanel() {
     isOpen = true;
     panel.classList.add('open');
@@ -29,7 +25,6 @@
 
     if (!hasGreeted) {
       hasGreeted = true;
-      // remove the notification dot permanently once opened
       const dot = toggle.querySelector('.cb-dot');
       if (dot) dot.style.display = 'none';
     }
@@ -44,14 +39,12 @@
   toggle.addEventListener('click', () => isOpen ? closePanel() : openPanel());
   if (closeBtn) closeBtn.addEventListener('click', closePanel);
 
-  /* ── Close on outside click ── */
   document.addEventListener('click', (e) => {
     if (isOpen && !panel.contains(e.target) && !toggle.contains(e.target)) {
       closePanel();
     }
   });
 
-  /* ── Send on Enter (Shift+Enter = newline) ── */
   input.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -61,13 +54,11 @@
 
   sendBtn.addEventListener('click', sendMessage);
 
-  /* ── Auto-grow textarea ── */
   input.addEventListener('input', () => {
     input.style.height = 'auto';
     input.style.height = Math.min(input.scrollHeight, 110) + 'px';
   });
 
-  /* ── Quick suggestion chips ── */
   document.querySelectorAll('.cb-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       input.value = chip.textContent.trim();
@@ -76,12 +67,10 @@
     });
   });
 
-  /* ── Send message ── */
   async function sendMessage() {
     const text = input.value.trim();
     if (!text || isTyping) return;
 
-    // Remove welcome card on first message
     const welcome = document.getElementById('cb-welcome');
     if (welcome) welcome.remove();
 
@@ -122,7 +111,6 @@
     }
   }
 
-  /* ── Append message bubble ── */
   function appendMessage(role, text) {
     const wrap = document.createElement('div');
     wrap.className = `cb-msg ${role}`;
@@ -141,7 +129,6 @@
     scrollBottom();
   }
 
-  /* ── Typing indicator ── */
   function showTyping() {
     isTyping = true;
     const el = document.createElement('div');
@@ -164,16 +151,14 @@
     if (el) el.remove();
   }
 
-  /* ── Error bubble ── */
   function appendError(msg) {
     const el = document.createElement('div');
     el.className = 'cb-msg bot';
-    el.innerHTML = `<div class="cb-error">⚠ ${escapeHtml(msg)}</div>`;
+    el.innerHTML = `<div class="cb-error">Error: ${escapeHtml(msg)}</div>`;
     messages.appendChild(el);
     scrollBottom();
   }
 
-  /* ── Helpers ── */
   function scrollBottom() {
     requestAnimationFrame(() => {
       messages.scrollTop = messages.scrollHeight;
